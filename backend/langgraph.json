@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "fineprint_graph": "./app/orchestrator/graph.py:fineprint_graph"
+  },
+  "env": ".env"
+}
