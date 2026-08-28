@@ -20,6 +20,10 @@ async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise
   const response = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
 
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== "undefined") {
+      localStorage.removeItem("fineprint_token");
+      window.location.href = "/login";
+    }
     const error = await response.json().catch(() => ({ detail: "Network error" }));
     throw new Error(error.detail || `HTTP ${response.status}`);
   }
@@ -58,7 +62,13 @@ export const api = {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
     });
-    if (!response.ok) throw new Error("Upload failed");
+    if (!response.ok) {
+      if (response.status === 401 && typeof window !== "undefined") {
+        localStorage.removeItem("fineprint_token");
+        window.location.href = "/login";
+      }
+      throw new Error("Upload failed");
+    }
     return response.json();
   },
 

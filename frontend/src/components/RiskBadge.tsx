@@ -1,19 +1,56 @@
-import { cn } from "@/lib/utils";
-
 type Severity = "high" | "medium" | "low" | "none" | string;
 
-const config: Record<string, { label: string; classes: string; dot: string }> = {
-  high:   { label: "High Risk",   classes: "bg-red-500/15 text-red-400 border border-red-500/20",     dot: "bg-red-400" },
-  medium: { label: "Medium Risk", classes: "bg-amber-500/15 text-amber-400 border border-amber-500/20", dot: "bg-amber-400" },
-  low:    { label: "Low Risk",    classes: "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20", dot: "bg-emerald-400" },
-  none:   { label: "No Risk",     classes: "bg-slate-500/15 text-slate-400 border border-slate-500/20", dot: "bg-slate-400" },
+const config: Record<string, { label: string; color: string; bg: string; border: string; dot: string }> = {
+  high: {
+    label: "High Risk",
+    color: "var(--status-danger)",
+    bg: "var(--status-danger-muted)",
+    border: "var(--status-danger-border)",
+    dot: "var(--status-danger)",
+  },
+  medium: {
+    label: "Medium Risk",
+    color: "var(--status-warning)",
+    bg: "var(--status-warning-muted)",
+    border: "var(--status-warning-border)",
+    dot: "var(--status-warning)",
+  },
+  low: {
+    label: "Low Risk",
+    color: "var(--status-success)",
+    bg: "var(--status-success-muted)",
+    border: "var(--status-success-border)",
+    dot: "var(--status-success)",
+  },
+  none: {
+    label: "No Risk",
+    color: "var(--status-neutral)",
+    bg: "var(--status-neutral-muted)",
+    border: "var(--status-neutral-border)",
+    dot: "var(--status-neutral)",
+  },
 };
 
 export default function RiskBadge({ level }: { level: Severity }) {
   const c = config[level] ?? config.none;
   return (
-    <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold", c.classes)}>
-      <span className={cn("w-1.5 h-1.5 rounded-full", level === "high" ? "pulse-soft" : "", c.dot)} />
+    <span
+      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide"
+      style={{
+        color: c.color,
+        background: c.bg,
+      }}
+    >
+      <span
+        className={level === "high" ? "animate-pulse-glow" : ""}
+        style={{
+          width: "6px",
+          height: "6px",
+          borderRadius: "50%",
+          background: c.dot,
+          display: "inline-block",
+        }}
+      />
       {c.label}
     </span>
   );

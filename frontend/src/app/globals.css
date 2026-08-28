@@ -1,55 +1,299 @@
 @import "tailwindcss";
 
+/* ===================================================================
+   FinePrint — Design Token System
+   Dual-theme (light + dark) with a single deep-indigo accent.
+   All UI elements reference these tokens — never raw hex values.
+   =================================================================== */
+
+/* ---------- Light Theme (GitHub Inspired) ---------- */
 :root {
-  --brand: #6366f1;
-  --brand-light: #818cf8;
-  --brand-dim: rgba(99, 102, 241, 0.15);
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  --surface: #111827;
-  --surface-2: #1f2937;
-  --border: rgba(255,255,255,0.07);
+  --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", "Cascadia Code", monospace;
+
+  /* Canvas & Surfaces */
+  --bg-canvas: #f6f8fa;
+  --bg-surface: #ffffff;
+  --bg-surface-raised: #f3f4f6;
+  --bg-overlay: rgba(36, 41, 47, 0.4);
+
+  /* Borders - Crisp */
+  --border-subtle: #d0d7de;
+  --border-default: #8c959f;
+  --border-strong: #57606a;
+
+  /* Text - High contrast */
+  --text-primary: #24292f;
+  --text-secondary: #57606a;
+  --text-tertiary: #6e7781;
+  --text-disabled: #8c959f;
+
+  /* Accent - User's Taupe Palette (Darkened slightly for contrast on white) */
+  --accent: #8c775e;
+  --accent-text: #ffffff;
+  --accent-hover: #756149;
+  --accent-muted: #FDEFEF; /* User's lightest blush */
+  --accent-border: #DAD0C2; /* User's light taupe */
+  --accent-glow: rgba(140, 119, 94, 0.15);
+
+  /* Status - GitHub defaults for usability */
+  --status-success: #1a7f37;
+  --status-success-muted: #dafbe1;
+  --status-success-border: #4ac26b;
+  --status-warning: #9a6700;
+  --status-warning-muted: #fff8c5;
+  --status-warning-border: #d4a72c;
+  --status-danger: #cf222e;
+  --status-danger-muted: #ffebe9;
+  --status-danger-border: #ff8182;
+  --status-neutral: #57606a;
+  --status-neutral-muted: #f6f8fa;
+  --status-neutral-border: #d0d7de;
+
+  /* Elevation - Crisp GitHub shadows */
+  --shadow-sm: 0 1px 0 rgba(27, 31, 36, 0.04);
+  --shadow-md: 0 3px 6px rgba(27, 31, 36, 0.15);
+  --shadow-lg: 0 8px 24px rgba(27, 31, 36, 0.12);
+
+  /* Sidebar */
+  --sidebar-bg: #f6f8fa;
+  --sidebar-border: #d0d7de;
+  --sidebar-hover: rgba(208, 215, 222, 0.32);
+
+  /* Input */
+  --input-bg: #ffffff;
+  --input-border: #d0d7de;
+  --input-focus-border: var(--accent);
 }
 
-* { box-sizing: border-box; }
+/* ---------- Dark Theme (GitHub Dark Inspired) ---------- */
+.dark {
+  --bg-canvas: #0d1117;
+  --bg-surface: #161b22;
+  --bg-surface-raised: #21262d;
+  --bg-overlay: rgba(1, 4, 9, 0.8);
+
+  --border-subtle: #30363d;
+  --border-default: #484f58;
+  --border-strong: #6e7681;
+
+  --text-primary: #c9d1d9;
+  --text-secondary: #8b949e;
+  --text-tertiary: #6e7681;
+  --text-disabled: #484f58;
+
+  /* Accent - User's exact Taupe color pops well here */
+  --accent: #CDBBA7;
+  --accent-text: #0d1117;
+  --accent-hover: #DAD0C2;
+  --accent-muted: rgba(205, 187, 167, 0.1);
+  --accent-border: rgba(205, 187, 167, 0.4);
+  --accent-glow: rgba(205, 187, 167, 0.15);
+
+  --status-success: #3fb950;
+  --status-success-muted: rgba(46, 160, 67, 0.15);
+  --status-success-border: rgba(46, 160, 67, 0.4);
+  --status-warning: #d29922;
+  --status-warning-muted: rgba(187, 128, 9, 0.15);
+  --status-warning-border: rgba(187, 128, 9, 0.4);
+  --status-danger: #f85149;
+  --status-danger-muted: rgba(248, 81, 73, 0.15);
+  --status-danger-border: rgba(248, 81, 73, 0.4);
+  --status-neutral: #8b949e;
+  --status-neutral-muted: rgba(110, 118, 129, 0.15);
+  --status-neutral-border: rgba(110, 118, 129, 0.4);
+
+  --shadow-sm: 0 0 0 1px #30363d, 0 1px 0 rgba(1, 4, 9, 0.8);
+  --shadow-md: 0 0 0 1px #30363d, 0 3px 6px rgba(1, 4, 9, 0.8);
+  --shadow-lg: 0 0 0 1px #30363d, 0 8px 24px rgba(1, 4, 9, 0.8);
+
+  --sidebar-bg: #0d1117;
+  --sidebar-border: #30363d;
+  --sidebar-hover: rgba(177, 186, 196, 0.12);
+
+  --input-bg: #0d1117;
+  --input-border: #30363d;
+  --input-focus-border: var(--accent);
+}
+
+/* ===================================================================
+   Base Styles
+   =================================================================== */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
+}
 
 body {
-  background: #080c14;
-  color: #e2e8f0;
+  background: var(--bg-canvas);
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
-
-/* Noise overlay for depth */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 0;
+/* ===================================================================
+   Typography Utilities
+   =================================================================== */
+.font-mono {
+  font-family: var(--font-mono);
 }
 
-.glass {
-  background: rgba(17, 24, 39, 0.7);
-  backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
-.glow-indigo { box-shadow: 0 0 30px rgba(99, 102, 241, 0.25); }
-
-@keyframes pulse-soft {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+/* ===================================================================
+   Scrollbar
+   =================================================================== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
-.pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
-
-@keyframes slide-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+::-webkit-scrollbar-track {
+  background: transparent;
 }
-.slide-in { animation: slide-in 0.3s ease forwards; }
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+
+/* ===================================================================
+   Focus Ring
+   =================================================================== */
+.focus-ring:focus-visible,
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ===================================================================
+   Animations — all guarded by prefers-reduced-motion
+   =================================================================== */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes gauge-fill {
+    from { width: 0%; }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  @keyframes counter-up {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.2s ease forwards;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.3s ease forwards;
+  }
+
+  .animate-gauge-fill {
+    animation: gauge-fill 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  .animate-shimmer {
+    background: linear-gradient(
+      90deg,
+      var(--bg-surface-raised) 25%,
+      var(--border-subtle) 50%,
+      var(--bg-surface-raised) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  .animate-counter-up {
+    animation: counter-up 0.4s ease forwards;
+  }
+
+  .animate-spin-slow {
+    animation: spin 1s linear infinite;
+  }
+}
+
+/* Reduced motion fallback — show everything instantly, no motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===================================================================
+   Utility Classes
+   =================================================================== */
+
+/* Surface card */
+.surface-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+}
+
+.surface-raised {
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+}
+
+/* Skeleton loader */
+.skeleton {
+  background: var(--bg-surface-raised);
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--bg-surface-raised) 25%,
+      var(--border-subtle) 50%,
+      var(--bg-surface-raised) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+}
