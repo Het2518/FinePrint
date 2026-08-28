@@ -4,7 +4,7 @@ Stores org-level configuration for business rules and thresholds.
 """
 
 import uuid
-from sqlalchemy import Float, ForeignKey
+from sqlalchemy import Float, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -25,8 +25,12 @@ class OrgSettings(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     # Optional second approver threshold (FR-APP-4)
     second_approver_threshold_usd: Mapped[float | None] = mapped_column(Float, nullable=True)
 
+    # Display currency for the frontend (does not affect stored values or business rules)
+    display_currency: Mapped[str] = mapped_column(String(10), nullable=False, default="USD")
+
     # Relationships
     organization: Mapped["Organization"] = relationship("Organization", back_populates="settings")
 
     def __repr__(self) -> str:
         return f"<OrgSettings org={self.org_id} threshold={self.approval_threshold_usd}>"
+

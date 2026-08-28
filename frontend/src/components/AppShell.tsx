@@ -13,8 +13,9 @@ const PAGE_TITLES: Record<string, { title: string; description: string }> = {
   "/": { title: "Dashboard", description: "Real-time contract risk intelligence" },
   "/contracts": { title: "Contracts", description: "Monitor and manage vendor contracts" },
   "/approvals": { title: "Approvals", description: "Review AI recommendations before action" },
-  "/actions": { title: "Actions", description: "Audit trail and draft execution" },
-  "/settings": { title: "Settings", description: "Configure thresholds, connections, and rules" },
+  "/actions": { title: "Actions", description: "Draft execution and action audit" },
+  "/activity": { title: "Activity", description: "Immutable audit trail" },
+  "/settings": { title: "Settings", description: "Configure thresholds, connections, and preferences" },
 };
 
 export default function AppShell({ children }: { children: React.ReactNode }) {

@@ -18,6 +18,7 @@ from app.auth.rbac import require_user_or_admin
 from app.models.user import User
 from app.models.decision import Decision, ApprovalStatus
 from app.models.contract import Contract
+from app.models.contract_clause import ContractClause
 from app.models.audit_log import AuditLog
 from app.services.email_service import send_action_confirmation
 
@@ -44,25 +45,36 @@ def list_decisions(
 
     decisions = query.order_by(Decision.decided_at.asc()).all()
 
-    return {
-        "decisions": [
-            {
-                "id": str(d.id),
-                "contract_id": str(d.contract_id),
-                "situation": d.situation,
-                "root_cause": d.root_cause,
-                "recommended_action": d.recommended_action.value if d.recommended_action else None,
-                "expected_impact": d.expected_impact_json,
-                "risk_level": d.risk_level.value if d.risk_level else None,
-                "confidence": d.confidence,
-                "requires_approval": d.requires_approval,
-                "approval_status": d.approval_status.value,
-                "decided_at": d.decided_at.isoformat() if d.decided_at else None,
-            }
-            for d in decisions
-        ],
-        "total": len(decisions),
-    }
+    result = []
+    for d in decisions:
+        # Enrich with contract and clause info for one-shot fetch
+        contract = db.query(Contract).filter(Contract.id == d.contract_id).first()
+        latest_clause = (
+            db.query(ContractClause)
+            .filter(ContractClause.contract_id == d.contract_id)
+            .order_by(ContractClause.created_at.desc())
+            .first()
+        )
+        result.append({
+            "id": str(d.id),
+            "contract_id": str(d.contract_id),
+            "file_name": contract.file_name if contract else None,
+            "vendor_name": latest_clause.vendor_name if latest_clause else None,
+            "contract_value_annual": latest_clause.contract_value_annual if latest_clause else None,
+            "currency": latest_clause.currency if latest_clause else "USD",
+            "situation": d.situation,
+            "root_cause": d.root_cause,
+            "recommended_action": d.recommended_action.value if d.recommended_action else None,
+            "expected_impact": d.expected_impact_json,
+            "risk_level": d.risk_level.value if d.risk_level else None,
+            "confidence": d.confidence,
+            "requires_approval": d.requires_approval,
+            "requires_second_approver": d.requires_second_approver,
+            "approval_status": d.approval_status.value,
+            "decided_at": d.decided_at.isoformat() if d.decided_at else None,
+        })
+
+    return {"decisions": result, "total": len(result)}
 
 
 @router.post("/{decision_id}/approve")

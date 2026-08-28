@@ -3,11 +3,15 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
 
 interface StatCardProps {
-  title: string;
-  value: string | number;
+  label: string;
+  value: string | number | ReactNode;
   subtitle?: string;
   icon: ReactNode;
   trend?: { value: string; up: boolean };
+  accent?: boolean;
+  positive?: boolean;
+  // Legacy compat
+  title?: string;
 }
 
 function AnimatedNumber({ value }: { value: number }) {
@@ -15,10 +19,7 @@ function AnimatedNumber({ value }: { value: number }) {
   const ref = useRef<number>(0);
 
   useEffect(() => {
-    if (value === 0) {
-      setDisplay(0);
-      return;
-    }
+    if (value === 0) { setDisplay(0); return; }
     const duration = 600;
     const startTime = performance.now();
     const startValue = ref.current;
@@ -26,16 +27,11 @@ function AnimatedNumber({ value }: { value: number }) {
     const animate = (now: number) => {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      // ease-out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
       const current = Math.round(startValue + (value - startValue) * eased);
       setDisplay(current);
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        ref.current = value;
-      }
+      if (progress < 1) requestAnimationFrame(animate);
+      else ref.current = value;
     };
     requestAnimationFrame(animate);
   }, [value]);
@@ -43,68 +39,56 @@ function AnimatedNumber({ value }: { value: number }) {
   return <>{display.toLocaleString()}</>;
 }
 
-export default function StatCard({ title, value, subtitle, icon, trend }: StatCardProps) {
+export default function StatCard({ label, title, value, subtitle, icon, trend, accent, positive }: StatCardProps) {
+  const displayLabel = label ?? title ?? "";
   const isNumber = typeof value === "number";
+  const iconBg = accent
+    ? "var(--status-warning-muted)"
+    : positive
+    ? "var(--status-success-muted)"
+    : "var(--accent-muted)";
+  const iconColor = accent
+    ? "var(--status-warning)"
+    : positive
+    ? "var(--status-success)"
+    : "var(--accent)";
 
   return (
     <div
       className="rounded-md p-5 transition-colors duration-150 animate-slide-up"
       style={{
         background: "var(--bg-surface)",
-        border: "1px solid var(--border-default)",
-        boxShadow: "var(--shadow-sm)",
+        border: "1px solid var(--border-subtle)",
       }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = "var(--border-strong)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = "var(--border-default)";
-      }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--border-default)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border-subtle)"; }}
     >
-      <div className="flex items-start justify-between mb-4">
-        <p
-          className="text-[11px] font-semibold uppercase tracking-widest"
-          style={{ color: "var(--text-tertiary)" }}
-        >
-          {title}
+      <div className="flex items-start justify-between mb-3">
+        <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "var(--text-tertiary)" }}>
+          {displayLabel}
         </p>
         <div
-          className="w-8 h-8 rounded-md flex items-center justify-center"
-          style={{
-            background: "var(--accent-muted)",
-            color: "var(--accent)",
-          }}
+          className="w-7 h-7 rounded-md flex items-center justify-center"
+          style={{ background: iconBg, color: iconColor }}
         >
           {icon}
         </div>
       </div>
 
-      <p
-        className="text-2xl font-bold tracking-tight tabular-nums"
-        style={{ color: "var(--text-primary)" }}
-      >
-        {isNumber ? <AnimatedNumber value={value} /> : value}
+      <p className="text-2xl font-bold tracking-tight tabular-nums" style={{ color: "var(--text-primary)" }}>
+        {isNumber ? <AnimatedNumber value={value as number} /> : value}
       </p>
 
       {subtitle && (
-        <p className="text-xs mt-1" style={{ color: "var(--text-tertiary)" }}>
-          {subtitle}
-        </p>
+        <p className="text-xs mt-1" style={{ color: "var(--text-tertiary)" }}>{subtitle}</p>
       )}
 
       {trend && (
-        <div className="mt-3 flex items-center gap-1.5">
-          <span
-            className="text-xs font-medium"
-            style={{
-              color: trend.up ? "var(--status-success)" : "var(--status-danger)",
-            }}
-          >
-            {trend.up ? "\u2191" : "\u2193"}
+        <div className="mt-2 flex items-center gap-1.5">
+          <span className="text-xs font-medium" style={{ color: trend.up ? "var(--status-success)" : "var(--status-danger)" }}>
+            {trend.up ? "↑" : "↓"}
           </span>
-          <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-            {trend.value}
-          </span>
+          <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>{trend.value}</span>
         </div>
       )}
     </div>

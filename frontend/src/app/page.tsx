@@ -1,399 +1,339 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import StatCard from "@/components/StatCard";
 import RiskBadge from "@/components/RiskBadge";
-import {
-  DollarSign, FileText, Bell, CheckCircle,
-  Wifi, WifiOff, RefreshCw, ArrowRight, TrendingUp, KeyRound,
-} from "lucide-react";
+import StatusBadge from "@/components/StatusBadge";
+import TimelineEvent from "@/components/TimelineEvent";
+import CurrencyValue from "@/components/CurrencyValue";
+import EmptyState from "@/components/EmptyState";
 import Link from "next/link";
-
-interface Summary {
-  total_contracts: number;
-  pending_approvals: number;
-  total_exposure_usd: number;
-  realized_savings_usd: number;
-  risk_breakdown: { high: number; medium: number; low: number; unknown: number };
-  mcp_connections: { server_type: string; status: string; last_verified_at: string | null }[];
-}
+import {
+  FileText, Bell, TrendingUp, Wifi, WifiOff,
+  DollarSign, RefreshCw, CheckCircle2, ScanLine,
+  ArrowRight, Cpu, AlertTriangle,
+} from "lucide-react";
 
 export default function DashboardPage() {
-  const [summary, setSummary] = useState<Summary | null>(null);
+  const [summary, setSummary] = useState<any>(null);
+  const [decisions, setDecisions] = useState<any[]>([]);
+  const [audit, setAudit] = useState<any[]>([]);
+  const [orgSettings, setOrgSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = async () => {
-    setLoading(true);
+  const load = useCallback(async (background = false) => {
+    if (!background) setLoading(true);
     setError(null);
     try {
-      const data = await api.dashboardSummary();
-      setSummary(data);
+      const [summaryData, decisionsData, auditData, settingsData] = await Promise.all([
+        api.dashboardSummary(),
+        api.listDecisions("pending"),
+        api.listAuditLogs({ limit: 8 }),
+        api.getOrgSettings().catch(() => ({ display_currency: "USD" })),
+      ]);
+      setSummary(summaryData);
+      setDecisions(decisionsData.decisions ?? []);
+      setAudit(auditData.events ?? []);
+      setOrgSettings(settingsData);
     } catch (e: any) {
       setError(e.message);
     } finally {
-      setLoading(false);
+      if (!background) setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    load();
   }, []);
 
-  const fmtUSD = (n: number) =>
-    new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 0,
-    }).format(n);
+  useEffect(() => { load(); }, [load]);
+
+  const currency = orgSettings?.display_currency ?? "USD";
+
+  const riskBar = summary?.risk_breakdown;
+  const totalRisk = riskBar
+    ? (riskBar.high || 0) + (riskBar.medium || 0) + (riskBar.low || 0) + (riskBar.unknown || 0)
+    : 0;
 
   return (
     <div className="min-h-screen p-6 lg:p-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1
-            className="text-xl font-bold tracking-tight"
-            style={{ color: "var(--text-primary)" }}
-          >
+          <h1 className="text-xl font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>
             Dashboard
           </h1>
           <p className="text-sm mt-0.5" style={{ color: "var(--text-tertiary)" }}>
-            Real-time contract risk intelligence
+            Real-time contract intelligence overview
           </p>
         </div>
         <button
-          onClick={load}
+          onClick={() => load(true)}
           disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors duration-150"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors"
           style={{
             background: "var(--bg-surface)",
             border: "1px solid var(--border-subtle)",
             color: "var(--text-secondary)",
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = "var(--accent-border)";
-            e.currentTarget.style.color = "var(--text-primary)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = "var(--border-subtle)";
-            e.currentTarget.style.color = "var(--text-secondary)";
-          }}
         >
-          <RefreshCw
-            size={14}
-            className={loading ? "animate-spin-slow" : ""}
-          />
+          <RefreshCw size={13} className={loading ? "animate-spin-slow" : ""} />
           Refresh
         </button>
       </div>
 
-      {/* Error / Auth banner */}
       {error && (
         <div
-          className="mb-6 p-4 rounded-md flex items-center justify-between"
+          className="mb-5 px-4 py-3 rounded-md text-sm"
           style={{
-            background: "var(--accent-muted)",
-            border: "1px solid var(--accent-border)",
+            background: "var(--status-danger-muted)",
+            border: "1px solid var(--status-danger-border)",
+            color: "var(--status-danger)",
           }}
         >
-          <div className="flex items-center gap-3">
-            <KeyRound size={16} style={{ color: "var(--accent)" }} />
-            <p className="text-sm" style={{ color: "var(--accent)" }}>
-              <span className="font-medium">Not logged in.</span> Use{" "}
-              <code
-                className="text-xs px-1.5 py-0.5 rounded"
-                style={{ background: "var(--accent-muted)" }}
-              >
-                /auth/register
-              </code>{" "}
-              to create your account.
-            </p>
-          </div>
-          <a
-            href="http://localhost:8000/docs"
-            target="_blank"
-            rel="noreferrer"
-            className="text-xs font-medium underline whitespace-nowrap ml-4"
-            style={{ color: "var(--accent)" }}
-          >
-            Open API Docs
-          </a>
+          {error}
         </div>
       )}
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard
-          title="Total Contracts"
-          value={loading ? "--" : summary?.total_contracts ?? 0}
-          subtitle="Monitored across all sources"
-          icon={<FileText size={16} />}
+          label="Total Contracts"
+          value={loading ? "—" : String(summary?.total_contracts ?? 0)}
+          icon={<FileText size={15} />}
         />
         <StatCard
-          title="Total Exposure"
-          value={loading ? "--" : fmtUSD(summary?.total_exposure_usd ?? 0)}
-          subtitle="Estimated savings potential"
-          icon={<DollarSign size={16} />}
-          trend={{ value: "vs last month", up: true }}
+          label="Pending Approvals"
+          value={loading ? "—" : String(summary?.pending_approvals ?? 0)}
+          icon={<Bell size={15} />}
+          accent={summary?.pending_approvals > 0}
         />
         <StatCard
-          title="Pending Approvals"
-          value={loading ? "--" : summary?.pending_approvals ?? 0}
-          subtitle="Awaiting human review"
-          icon={<Bell size={16} />}
+          label="Total Exposure"
+          value={loading ? "—" : <CurrencyValue amount={summary?.total_exposure_usd} currency={currency} />}
+          icon={<AlertTriangle size={15} />}
         />
         <StatCard
-          title="Realized Savings"
-          value={loading ? "--" : fmtUSD(summary?.realized_savings_usd ?? 0)}
-          subtitle="From verified outcomes"
-          icon={<CheckCircle size={16} />}
-          trend={{ value: "YTD confirmed", up: true }}
+          label="Realized Savings"
+          value={loading ? "—" : <CurrencyValue amount={summary?.realized_savings_usd} currency={currency} />}
+          icon={<TrendingUp size={15} />}
+          positive
         />
       </div>
 
-      {/* Middle section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        {/* Risk Breakdown */}
-        <div
-          className="rounded-md p-5"
-          style={{
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border-default)",
-          }}
-        >
-          <p
-            className="text-[11px] font-semibold uppercase tracking-widest mb-4"
-            style={{ color: "var(--text-tertiary)" }}
-          >
-            Risk Breakdown
-          </p>
-          {loading ? (
-            <div className="space-y-3">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-8 rounded-md skeleton" />
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {[
-                { key: "high", label: "High", color: "var(--status-danger)" },
-                { key: "medium", label: "Medium", color: "var(--status-warning)" },
-                { key: "low", label: "Low", color: "var(--status-success)" },
-              ].map(({ key, label, color }) => {
-                const count =
-                  summary?.risk_breakdown[
-                    key as keyof typeof summary.risk_breakdown
-                  ] ?? 0;
-                const total =
-                  Object.values(summary?.risk_breakdown ?? {}).reduce(
-                    (a, b) => a + b,
-                    0
-                  ) || 1;
-                const pct = Math.round((count / total) * 100);
-                return (
-                  <div key={key}>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span style={{ color: "var(--text-secondary)" }}>
-                        {label}
-                      </span>
-                      <span
-                        className="font-medium tabular-nums"
-                        style={{ color: "var(--text-primary)" }}
-                      >
-                        {count}
-                      </span>
-                    </div>
-                    <div
-                      className="h-1.5 rounded-full overflow-hidden"
-                      style={{ background: "var(--bg-surface-raised)" }}
-                    >
-                      <div
-                        className="h-full rounded-full animate-gauge-fill"
-                        style={{ width: `${pct}%`, background: color }}
-                      />
-                    </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Left column — main content */}
+        <div className="lg:col-span-2 space-y-5">
+
+          {/* Risk Distribution */}
+          {riskBar && totalRisk > 0 && (
+            <div
+              className="rounded-md p-5"
+              style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}
+            >
+              <h2 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "var(--text-secondary)" }}>
+                Risk Distribution
+              </h2>
+              <div className="flex rounded-md overflow-hidden h-2 mb-3">
+                {riskBar.high > 0 && (
+                  <div
+                    className="transition-all duration-700"
+                    style={{ width: `${(riskBar.high / totalRisk) * 100}%`, background: "var(--status-danger)" }}
+                    title={`High: ${riskBar.high}`}
+                  />
+                )}
+                {riskBar.medium > 0 && (
+                  <div
+                    className="transition-all duration-700"
+                    style={{ width: `${(riskBar.medium / totalRisk) * 100}%`, background: "var(--status-warning)" }}
+                    title={`Medium: ${riskBar.medium}`}
+                  />
+                )}
+                {riskBar.low > 0 && (
+                  <div
+                    className="transition-all duration-700"
+                    style={{ width: `${(riskBar.low / totalRisk) * 100}%`, background: "var(--status-success)" }}
+                    title={`Low: ${riskBar.low}`}
+                  />
+                )}
+                {riskBar.unknown > 0 && (
+                  <div
+                    className="transition-all duration-700"
+                    style={{ width: `${(riskBar.unknown / totalRisk) * 100}%`, background: "var(--border-subtle)" }}
+                    title={`Unknown: ${riskBar.unknown}`}
+                  />
+                )}
+              </div>
+              <div className="flex gap-5 text-xs">
+                {[
+                  { label: "High", count: riskBar.high, color: "var(--status-danger)" },
+                  { label: "Medium", count: riskBar.medium, color: "var(--status-warning)" },
+                  { label: "Low", count: riskBar.low, color: "var(--status-success)" },
+                  { label: "Unknown", count: riskBar.unknown, color: "var(--border-default)" },
+                ].map(({ label, count, color }) => count > 0 && (
+                  <div key={label} className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full" style={{ background: color }} />
+                    <span style={{ color: "var(--text-secondary)" }}>{count} {label}</span>
                   </div>
-                );
-              })}
+                ))}
+              </div>
             </div>
           )}
-        </div>
 
-        {/* MCP Connection Health */}
-        <div
-          className="rounded-md p-5 lg:col-span-2"
-          style={{
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border-default)",
-          }}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <p
-              className="text-[11px] font-semibold uppercase tracking-widest"
-              style={{ color: "var(--text-tertiary)" }}
-            >
-              System Health
-            </p>
-            <Link
-              href="/settings"
-              className="text-xs font-medium transition-colors"
-              style={{ color: "var(--accent)" }}
-            >
-              Manage
-            </Link>
-          </div>
-          {loading ? (
-            <div className="grid grid-cols-2 gap-3">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-14 rounded-md skeleton" />
-              ))}
-            </div>
-          ) : summary?.mcp_connections.length === 0 ? (
+          {/* Pending Approvals */}
+          <div
+            className="rounded-md overflow-hidden"
+            style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}
+          >
             <div
-              className="text-center py-8 text-sm"
-              style={{ color: "var(--text-tertiary)" }}
+              className="flex items-center justify-between px-5 py-3.5"
+              style={{ borderBottom: "1px solid var(--border-subtle)" }}
             >
-              No MCP connections configured.{" "}
+              <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--text-secondary)" }}>
+                Pending Approvals
+              </h2>
               <Link
-                href="/settings"
-                className="font-medium"
+                href="/approvals"
+                className="text-xs font-medium flex items-center gap-1"
                 style={{ color: "var(--accent)" }}
               >
-                Add one
+                View all <ArrowRight size={11} />
               </Link>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {summary?.mcp_connections.map((conn) => (
-                <div
-                  key={conn.server_type}
-                  className="flex items-center gap-3 rounded-md px-4 py-3"
-                  style={{
-                    background: "var(--bg-surface-raised)",
-                    border: "1px solid var(--border-subtle)",
-                  }}
-                >
-                  {conn.status === "active" ? (
-                    <Wifi
-                      size={14}
-                      style={{ color: "var(--status-success)", flexShrink: 0 }}
-                    />
-                  ) : (
-                    <WifiOff
-                      size={14}
-                      style={{ color: "var(--status-danger)", flexShrink: 0 }}
-                    />
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className="text-sm font-medium capitalize truncate"
-                      style={{ color: "var(--text-primary)" }}
-                    >
-                      {conn.server_type.replace("_", " ")}
-                    </p>
-                    <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                      {conn.status === "active" ? "Connected" : "Disconnected"}
-                      {conn.last_verified_at &&
-                        ` · ${new Date(conn.last_verified_at).toLocaleDateString()}`}
-                    </p>
+
+            {loading ? (
+              <div className="p-5 space-y-3">
+                {[1,2].map(i => <div key={i} className="h-14 rounded-md skeleton" />)}
+              </div>
+            ) : decisions.length === 0 ? (
+              <EmptyState
+                compact
+                icon={<CheckCircle2 size={16} />}
+                title="No pending approvals"
+                description="All decisions have been reviewed."
+              />
+            ) : (
+              <div className="divide-y" style={{ borderColor: "var(--border-subtle)" }}>
+                {decisions.slice(0, 4).map((d: any) => (
+                  <div key={d.id} className="flex items-center gap-4 px-5 py-3.5">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>
+                        {d.vendor_name ?? d.file_name ?? "Unknown Vendor"}
+                      </p>
+                      <p className="text-xs truncate mt-0.5" style={{ color: "var(--text-tertiary)" }}>
+                        {d.situation ? d.situation.slice(0, 80) + (d.situation.length > 80 ? "…" : "") : "Pending review"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {d.risk_level && <RiskBadge level={d.risk_level} />}
+                      {d.expected_impact?.savings_annual != null && (
+                        <span className="text-xs font-mono font-semibold" style={{ color: "var(--status-success)" }}>
+                          <CurrencyValue amount={d.expected_impact.savings_annual} currency={currency} />
+                        </span>
+                      )}
+                      <Link
+                        href="/approvals"
+                        className="text-xs px-2.5 py-1 rounded-md font-medium"
+                        style={{ background: "var(--accent)", color: "var(--accent-text)" }}
+                      >
+                        Review
+                      </Link>
+                    </div>
                   </div>
-                  <span
-                    className={`w-2 h-2 rounded-full shrink-0 ${
-                      conn.status === "active" ? "animate-pulse-glow" : ""
-                    }`}
-                    style={{
-                      background:
-                        conn.status === "active"
-                          ? "var(--status-success)"
-                          : "var(--text-disabled)",
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Link
-          href="/approvals"
-          className="rounded-md p-5 flex items-center gap-4 group transition-colors duration-150"
-          style={{
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border-default)",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = "var(--accent-border)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = "var(--border-subtle)";
-          }}
-        >
+        {/* Right column — system status */}
+        <div className="space-y-5">
+          {/* MCP Health */}
           <div
-            className="w-10 h-10 rounded-md flex items-center justify-center transition-transform duration-150 group-hover:scale-105"
-            style={{
-              background: "var(--status-warning-muted)",
-              color: "var(--status-warning)",
-            }}
+            className="rounded-md overflow-hidden"
+            style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}
           >
-            <Bell size={18} />
+            <div className="px-4 py-3.5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+              <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--text-secondary)" }}>
+                Integrations
+              </h2>
+            </div>
+            <div className="px-4 py-3 space-y-2.5">
+              {loading ? (
+                [1,2,3].map(i => <div key={i} className="h-7 rounded skeleton" />)
+              ) : summary?.mcp_connections?.length === 0 ? (
+                <p className="text-xs py-2" style={{ color: "var(--text-disabled)" }}>
+                  No integrations configured.
+                </p>
+              ) : (
+                (summary?.mcp_connections ?? []).map((c: any) => (
+                  <div key={c.server_type} className="flex items-center justify-between">
+                    <span className="text-sm capitalize" style={{ color: "var(--text-primary)" }}>
+                      {c.server_type.replace(/_/g, " ")}
+                    </span>
+                    <div className="flex items-center gap-1.5 text-xs">
+                      {c.status === "active" ? (
+                        <>
+                          <Wifi size={11} style={{ color: "var(--status-success)" }} />
+                          <span style={{ color: "var(--status-success)" }}>Connected</span>
+                        </>
+                      ) : (
+                        <>
+                          <WifiOff size={11} style={{ color: "var(--text-disabled)" }} />
+                          <span style={{ color: "var(--text-disabled)" }}>Disconnected</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+              <Link
+                href="/settings"
+                className="block text-xs pt-1.5"
+                style={{ color: "var(--accent)" }}
+              >
+                Manage integrations →
+              </Link>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-              Review Approval Queue
-            </p>
-            <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-              {summary?.pending_approvals ?? "--"} decisions waiting for sign-off
-            </p>
-          </div>
-          <ArrowRight
-            size={16}
-            className="transition-transform duration-150 group-hover:translate-x-1"
-            style={{ color: "var(--text-disabled)" }}
-          />
-        </Link>
 
-        <Link
-          href="/contracts"
-          className="rounded-md p-5 flex items-center gap-4 group transition-colors duration-150"
-          style={{
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border-default)",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = "var(--accent-border)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = "var(--border-subtle)";
-          }}
-        >
+          {/* Recent Activity */}
           <div
-            className="w-10 h-10 rounded-md flex items-center justify-center transition-transform duration-150 group-hover:scale-105"
-            style={{
-              background: "var(--accent-muted)",
-              color: "var(--accent)",
-            }}
+            className="rounded-md overflow-hidden"
+            style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}
           >
-            <TrendingUp size={18} />
+            <div
+              className="flex items-center justify-between px-4 py-3.5"
+              style={{ borderBottom: "1px solid var(--border-subtle)" }}
+            >
+              <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--text-secondary)" }}>
+                Recent Activity
+              </h2>
+              <Link href="/activity" className="text-xs" style={{ color: "var(--accent)" }}>
+                View all →
+              </Link>
+            </div>
+            <div className="px-4 pt-4 pb-2">
+              {loading ? (
+                <div className="space-y-3">
+                  {[1,2,3].map(i => <div key={i} className="h-10 rounded skeleton" />)}
+                </div>
+              ) : audit.length === 0 ? (
+                <EmptyState compact icon={<Cpu size={14} />} title="No activity yet" />
+              ) : (
+                audit.slice(0, 5).map((e, i) => (
+                  <TimelineEvent
+                    key={e.id}
+                    action={e.action}
+                    entityType={e.entity_type}
+                    userId={e.user_id}
+                    detail={e.detail}
+                    timestamp={e.timestamp}
+                    isLast={i === Math.min(4, audit.length - 1)}
+                  />
+                ))
+              )}
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-              View Risk Queue
-            </p>
-            <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-              Browse and trigger contract scans
-            </p>
-          </div>
-          <ArrowRight
-            size={16}
-            className="transition-transform duration-150 group-hover:translate-x-1"
-            style={{ color: "var(--text-disabled)" }}
-          />
-        </Link>
+        </div>
       </div>
     </div>
   );

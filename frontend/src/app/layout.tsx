@@ -3,6 +3,8 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import AppShell from "@/components/AppShell";
 import ThemeProvider from "@/components/ThemeProvider";
+import BisAttributeCleaner from "@/components/BisAttributeCleaner";
+import ExtensionErrorSuppressor from "@/components/ExtensionErrorSuppressor";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -30,36 +32,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         className={`${inter.variable} ${jetbrainsMono.variable} font-sans min-h-screen`}
         style={{ background: "var(--bg-canvas)", color: "var(--text-primary)" }}
       >
+        <ExtensionErrorSuppressor />
         <div suppressHydrationWarning>
           <ThemeProvider>
             <AppShell>{children}</AppShell>
           </ThemeProvider>
         </div>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                // Strip existing attributes immediately
-                document.querySelectorAll('[bis_skin_checked]').forEach(function(el) {
-                  el.removeAttribute('bis_skin_checked');
-                });
-                // Keep observing and stripping to beat the extension
-                var observer = new MutationObserver(function(mutations) {
-                  mutations.forEach(function(mutation) {
-                    if (mutation.type === 'attributes' && mutation.attributeName === 'bis_skin_checked') {
-                      mutation.target.removeAttribute('bis_skin_checked');
-                    }
-                  });
-                });
-                observer.observe(document.documentElement, {
-                  attributes: true,
-                  subtree: true,
-                  attributeFilter: ['bis_skin_checked']
-                });
-              })();
-            `,
-          }}
-        />
+        {/* BisAttributeCleaner runs client-side to remove browser extension attribute injections
+            that cause React hydration mismatches */}
+        <BisAttributeCleaner />
       </body>
     </html>
   );

@@ -99,4 +99,10 @@ export const api = {
   getOrgSettings: () => apiFetch<any>("/settings"),
   updateOrgSettings: (data: any) =>
     apiFetch<any>("/settings", { method: "PUT", body: JSON.stringify(data) }),
+
+  // Audit Log (NEW)
+  listAuditLogs: (params?: { contract_id?: string; limit?: number }) => {
+    const qs = new URLSearchParams(params as any).toString();
+    return apiFetch<any>(`/audit${qs ? `?${qs}` : ""}`);
+  },
 };

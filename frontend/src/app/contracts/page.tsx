@@ -1,66 +1,59 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import RiskBadge from "@/components/RiskBadge";
+import StatusBadge from "@/components/StatusBadge";
+import EmptyState from "@/components/EmptyState";
+import CurrencyValue from "@/components/CurrencyValue";
 import {
-  Search, Upload, RefreshCw, ScanLine, FileText, ChevronRight, Filter,
+  Search, Upload, RefreshCw, ScanLine, FileText, Loader2,
+  ChevronRight, RotateCcw, AlertTriangle, Filter, X,
+  Mail, HardDrive, Globe,
 } from "lucide-react";
 
-interface Contract {
-  id: string;
-  file_name: string;
-  source: string;
-  status: string;
-  last_scanned_at: string | null;
-  vendor_name: string | null;
-  renewal_date: string | null;
-  annual_value: number | null;
-  risk_level: string | null;
-  approval_status: string | null;
-}
-
-const STATUS_STYLES: Record<string, { color: string; bg: string }> = {
-  active: { color: "var(--status-success)", bg: "var(--status-success-muted)" },
-  scanning: { color: "var(--accent)", bg: "var(--accent-muted)" },
-  manual_review: { color: "var(--status-warning)", bg: "var(--status-warning-muted)" },
-  parse_failed: { color: "var(--status-danger)", bg: "var(--status-danger-muted)" },
-  archived: { color: "var(--status-neutral)", bg: "var(--status-neutral-muted)" },
+const SOURCE_ICONS: Record<string, React.ReactNode> = {
+  gmail:          <Mail size={12} />,
+  google_drive:   <HardDrive size={12} />,
+  manual_upload:  <Upload size={12} />,
 };
 
 export default function ContractsPage() {
-  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [contracts, setContracts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [riskFilter, setRiskFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [uploading, setUploading] = useState(false);
   const [scanning, setScanning] = useState<string | null>(null);
+  const [orgSettings, setOrgSettings] = useState<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async (background = false) => {
     if (!background) setLoading(true);
     try {
-      const data = await api.listContracts(
-        riskFilter ? { risk_level: riskFilter } : undefined
-      );
+      const params: any = {};
+      if (riskFilter) params.risk_level = riskFilter;
+      if (statusFilter) params.status = statusFilter;
+      const data = await api.listContracts(params);
       setContracts(data.contracts || []);
     } catch (e) {
       console.error(e);
     } finally {
       if (!background) setLoading(false);
     }
-  }, [riskFilter]);
+  }, [riskFilter, statusFilter]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => { api.getOrgSettings().then(setOrgSettings).catch(() => {}); }, []);
 
+  // Poll while any contract is scanning
   useEffect(() => {
     const isScanning = contracts.some((c) => c.status === "scanning");
-    if (isScanning) {
-      const interval = setInterval(() => load(true), 3000);
-      return () => clearInterval(interval);
-    }
+    if (!isScanning) return;
+    const interval = setInterval(() => load(true), 3500);
+    return () => clearInterval(interval);
   }, [contracts, load]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,11 +62,12 @@ export default function ContractsPage() {
     setUploading(true);
     try {
       await api.uploadContract(file);
-      await load();
-    } catch (err) {
-      console.error(err);
+      await load(true);
+    } catch (err: any) {
+      alert(err.message);
     } finally {
       setUploading(false);
+      e.target.value = "";
     }
   };
 
@@ -81,314 +75,315 @@ export default function ContractsPage() {
     setScanning(id);
     try {
       await api.triggerScan(id);
-      setTimeout(load, 2000);
-    } catch (e) {
-      console.error(e);
+      await load(true);
     } finally {
       setScanning(null);
     }
   };
 
-  const filtered = contracts.filter(
-    (c) =>
-      c.vendor_name?.toLowerCase().includes(search.toLowerCase()) ||
-      c.file_name.toLowerCase().includes(search.toLowerCase())
-  );
+  const currency = orgSettings?.display_currency ?? "USD";
 
-  const fmtUSD = (n: number | null) =>
-    n
-      ? new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency: "USD",
-          maximumFractionDigits: 0,
-        }).format(n)
-      : "--";
+  const filtered = contracts.filter((c) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      c.file_name?.toLowerCase().includes(q) ||
+      c.vendor_name?.toLowerCase().includes(q) ||
+      c.status?.toLowerCase().includes(q)
+    );
+  });
+
+  const hasActiveFilters = riskFilter || statusFilter;
 
   return (
     <div className="min-h-screen p-6 lg:p-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1
-            className="text-xl font-bold tracking-tight"
-            style={{ color: "var(--text-primary)" }}
-          >
+          <h1 className="text-xl font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>
             Contracts
           </h1>
           <p className="text-sm mt-0.5" style={{ color: "var(--text-tertiary)" }}>
-            {contracts.length} contracts monitored
+            {contracts.length} contract{contracts.length !== 1 ? "s" : ""} monitored
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
-            onClick={load}
+            onClick={() => load(true)}
             disabled={loading}
-            className="p-2 rounded-md transition-colors duration-150"
+            className="p-2 rounded-md transition-colors"
             style={{
               background: "var(--bg-surface)",
               border: "1px solid var(--border-subtle)",
               color: "var(--text-secondary)",
             }}
+            title="Refresh"
           >
-            <RefreshCw
-              size={14}
-              className={loading ? "animate-spin-slow" : ""}
-            />
+            <RefreshCw size={14} className={loading ? "animate-spin-slow" : ""} />
           </button>
-          <label
-            className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-colors duration-150"
-            style={{
-              background: "var(--accent)",
-              color: "var(--accent-text)",
-            }}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+            style={{ background: "var(--accent)", color: "var(--accent-text)" }}
           >
-            <Upload size={14} />
-            {uploading ? "Uploading..." : "Upload Contract"}
-            <input
-              type="file"
-              accept=".pdf,.docx,.txt"
-              onChange={handleUpload}
-              className="hidden"
-            />
-          </label>
+            {uploading ? <Loader2 size={14} className="animate-spin-slow" /> : <Upload size={14} />}
+            {uploading ? "Uploading…" : "Upload Contract"}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.docx,.txt"
+            onChange={handleUpload}
+            className="hidden"
+          />
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex items-center gap-3 mb-5">
-        <div className="flex-1 relative">
-          <Search
-            size={14}
-            className="absolute left-3 top-1/2 -translate-y-1/2"
-            style={{ color: "var(--text-disabled)" }}
-          />
+      {/* Filter bar */}
+      <div
+        className="flex flex-wrap items-center gap-2 mb-5 p-3 rounded-md"
+        style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}
+      >
+        {/* Search */}
+        <div
+          className="flex items-center gap-2 flex-1 min-w-48 px-3 py-1.5 rounded-md"
+          style={{
+            background: "var(--bg-surface-raised)",
+            border: "1px solid var(--border-subtle)",
+          }}
+        >
+          <Search size={13} style={{ color: "var(--text-disabled)" }} />
           <input
+            type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by vendor or filename..."
-            className="w-full pl-9 pr-4 py-2.5 rounded-md text-sm outline-none transition-colors"
-            style={{
-              background: "var(--input-bg)",
-              border: "1px solid var(--input-border)",
-              color: "var(--text-primary)",
-            }}
-            onFocus={(e) => {
-              e.currentTarget.style.borderColor = "var(--input-focus-border)";
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.borderColor = "var(--input-border)";
-            }}
+            placeholder="Search contracts…"
+            className="bg-transparent text-sm outline-none w-full"
+            style={{ color: "var(--text-primary)" }}
           />
-        </div>
-        <div className="flex items-center gap-2">
-          <Filter size={14} style={{ color: "var(--text-disabled)" }} />
-          {["", "high", "medium", "low"].map((r) => (
-            <button
-              key={r}
-              onClick={() => setRiskFilter(r)}
-              className="px-3 py-2 rounded-md text-xs font-medium transition-all duration-150"
-              style={{
-                background:
-                  riskFilter === r ? "var(--accent-muted)" : "var(--bg-surface)",
-                color:
-                  riskFilter === r ? "var(--accent)" : "var(--text-secondary)",
-                border: `1px solid ${
-                  riskFilter === r
-                    ? "var(--accent-border)"
-                    : "var(--border-subtle)"
-                }`,
-              }}
-            >
-              {r === "" ? "All" : r.charAt(0).toUpperCase() + r.slice(1)}
+          {search && (
+            <button onClick={() => setSearch("")}>
+              <X size={12} style={{ color: "var(--text-disabled)" }} />
             </button>
-          ))}
+          )}
         </div>
+
+        {/* Risk filter */}
+        <select
+          value={riskFilter}
+          onChange={(e) => setRiskFilter(e.target.value)}
+          className="px-3 py-1.5 rounded-md text-sm outline-none"
+          style={{
+            background: riskFilter ? "var(--accent-muted)" : "var(--bg-surface-raised)",
+            border: `1px solid ${riskFilter ? "var(--accent-border)" : "var(--border-subtle)"}`,
+            color: riskFilter ? "var(--accent)" : "var(--text-secondary)",
+          }}
+        >
+          <option value="">All Risk Levels</option>
+          <option value="high">High Risk</option>
+          <option value="medium">Medium Risk</option>
+          <option value="low">Low Risk</option>
+        </select>
+
+        {/* Status filter */}
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-3 py-1.5 rounded-md text-sm outline-none"
+          style={{
+            background: statusFilter ? "var(--accent-muted)" : "var(--bg-surface-raised)",
+            border: `1px solid ${statusFilter ? "var(--accent-border)" : "var(--border-subtle)"}`,
+            color: statusFilter ? "var(--accent)" : "var(--text-secondary)",
+          }}
+        >
+          <option value="">All Statuses</option>
+          <option value="active">Active</option>
+          <option value="scanning">Scanning</option>
+          <option value="manual_review">Manual Review</option>
+          <option value="parse_failed">Parse Failed</option>
+          <option value="archived">Archived</option>
+        </select>
+
+        {hasActiveFilters && (
+          <button
+            onClick={() => { setRiskFilter(""); setStatusFilter(""); }}
+            className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-md"
+            style={{ color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" }}
+          >
+            <X size={11} /> Clear filters
+          </button>
+        )}
       </div>
 
       {/* Table */}
       <div
         className="rounded-md overflow-hidden"
-        style={{
-          background: "var(--bg-surface)",
-          border: "1px solid var(--border-subtle)",
-        }}
+        style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}
       >
-        <table className="w-full">
-          <thead>
-            <tr style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-              {[
-                "Vendor / File",
-                "Annual Value",
-                "Renewal",
-                "Risk",
-                "Status",
-                "Last Scanned",
-                "",
-              ].map((h) => (
-                <th
-                  key={h}
-                  className="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-widest"
-                  style={{ color: "var(--text-tertiary)" }}
+        {/* Table header */}
+        <div
+          className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 px-5 py-2.5 text-xs font-semibold uppercase tracking-wider"
+          style={{
+            borderBottom: "1px solid var(--border-subtle)",
+            color: "var(--text-tertiary)",
+            background: "var(--bg-surface-raised)",
+          }}
+        >
+          <span>Contract / Vendor</span>
+          <span>Status</span>
+          <span>Risk</span>
+          <span>Annual Value</span>
+          <span>Last Scanned</span>
+          <span />
+        </div>
+
+        {loading ? (
+          <div className="p-5 space-y-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-16 rounded-md skeleton" />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            icon={<FileText size={18} />}
+            title={hasActiveFilters || search ? "No contracts match your filters" : "No contracts yet"}
+            description={
+              hasActiveFilters || search
+                ? "Try adjusting your search or filters."
+                : "Upload your first contract to get started with AI risk analysis."
+            }
+            action={
+              !hasActiveFilters && !search ? (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium"
+                  style={{ background: "var(--accent)", color: "var(--accent-text)" }}
                 >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              [...Array(5)].map((_, i) => (
-                <tr
-                  key={i}
-                  style={{ borderBottom: "1px solid var(--border-subtle)" }}
+                  <Upload size={13} /> Upload Contract
+                </button>
+              ) : undefined
+            }
+          />
+        ) : (
+          <div className="divide-y" style={{ borderColor: "var(--border-subtle)" }}>
+            {filtered.map((c) => {
+              const isScanning = c.status === "scanning" || scanning === c.id;
+              return (
+                <div
+                  key={c.id}
+                  className="group grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 items-center px-5 py-3.5 transition-colors"
+                  style={{ color: "var(--text-primary)" }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "var(--bg-surface-raised)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "transparent";
+                  }}
                 >
-                  {[...Array(7)].map((_, j) => (
-                    <td key={j} className="px-5 py-4">
-                      <div
-                        className="h-4 rounded skeleton"
-                        style={{
-                          width: `${60 + Math.random() * 40}%`,
-                        }}
-                      />
-                    </td>
-                  ))}
-                </tr>
-              ))
-            ) : filtered.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={7}
-                  className="text-center py-16"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
-                  <FileText
-                    size={32}
-                    className="mx-auto mb-3"
-                    style={{ opacity: 0.3 }}
-                  />
-                  <p className="text-sm">No contracts found.</p>
-                  <p className="text-xs mt-1" style={{ color: "var(--text-disabled)" }}>
-                    Upload a PDF or DOCX to get started.
-                  </p>
-                </td>
-              </tr>
-            ) : (
-              filtered.map((c) => {
-                const statusStyle = STATUS_STYLES[c.status] || {
-                  color: "var(--status-neutral)",
-                  bg: "var(--status-neutral-muted)",
-                };
-                return (
-                  <tr
-                    key={c.id}
-                    className="transition-colors duration-100 group"
-                    style={{ borderBottom: "1px solid var(--border-subtle)" }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background =
-                        "var(--bg-surface-raised)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "transparent";
-                    }}
-                  >
-                    <td className="px-5 py-4">
-                      <p
-                        className="text-sm font-medium"
+                  {/* Contract name + vendor */}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <Link
+                        href={`/contracts/${c.id}`}
+                        className="text-sm font-semibold truncate hover:underline"
                         style={{ color: "var(--text-primary)" }}
                       >
-                        {c.vendor_name || "Unknown Vendor"}
-                      </p>
-                      <p
-                        className="text-xs truncate max-w-48"
-                        style={{ color: "var(--text-tertiary)" }}
-                      >
-                        {c.file_name}
-                      </p>
-                    </td>
-                    <td
-                      className="px-5 py-4 text-sm font-mono tabular-nums"
-                      style={{ color: "var(--text-primary)" }}
-                    >
-                      {fmtUSD(c.annual_value)}
-                    </td>
-                    <td
-                      className="px-5 py-4 text-sm"
-                      style={{ color: "var(--text-secondary)" }}
-                    >
-                      {c.renewal_date || "--"}
-                    </td>
-                    <td className="px-5 py-4">
-                      {c.risk_level ? (
-                        <RiskBadge level={c.risk_level} />
-                      ) : (
+                        {c.vendor_name ?? c.file_name}
+                      </Link>
+                      {c.auto_renew && (
                         <span
-                          className="text-xs"
-                          style={{ color: "var(--text-disabled)" }}
+                          className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded shrink-0"
+                          style={{
+                            background: "var(--status-warning-muted)",
+                            color: "var(--status-warning)",
+                          }}
+                          title="Auto-renew active"
                         >
-                          Not scanned
+                          <RotateCcw size={8} /> Auto-renew
                         </span>
                       )}
-                    </td>
-                    <td className="px-5 py-4">
-                      <span
-                        className="text-xs px-2.5 py-1 rounded-full font-medium capitalize"
-                        style={{
-                          color: statusStyle.color,
-                          background: statusStyle.bg,
-                        }}
-                      >
-                        {c.status.replace("_", " ")}
-                      </span>
-                    </td>
-                    <td
-                      className="px-5 py-4 text-xs font-mono"
-                      style={{ color: "var(--text-tertiary)" }}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs" style={{ color: "var(--text-tertiary)" }}>
+                      {SOURCE_ICONS[c.source] ?? <Globe size={11} />}
+                      <span className="font-mono truncate max-w-[180px]">{c.file_name}</span>
+                    </div>
+                  </div>
+
+                  {/* Status */}
+                  <div>
+                    <StatusBadge status={c.status} />
+                  </div>
+
+                  {/* Risk */}
+                  <div>
+                    {c.risk_level ? (
+                      <RiskBadge level={c.risk_level} />
+                    ) : (
+                      <span className="text-xs" style={{ color: "var(--text-disabled)" }}>—</span>
+                    )}
+                  </div>
+
+                  {/* Value */}
+                  <div className="text-sm font-mono tabular-nums" style={{ color: "var(--text-primary)" }}>
+                    {c.contract_value_annual != null ? (
+                      <CurrencyValue amount={c.contract_value_annual} currency={currency} />
+                    ) : (
+                      <span style={{ color: "var(--text-disabled)" }}>—</span>
+                    )}
+                  </div>
+
+                  {/* Last scanned */}
+                  <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+                    {c.last_scanned_at
+                      ? new Date(c.last_scanned_at).toLocaleDateString()
+                      : <span style={{ color: "var(--text-disabled)" }}>Never</span>}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => { e.preventDefault(); triggerScan(c.id); }}
+                      disabled={isScanning}
+                      className="p-1.5 rounded-md transition-colors disabled:opacity-40"
+                      style={{
+                        background: "var(--bg-surface-raised)",
+                        border: "1px solid var(--border-subtle)",
+                        color: "var(--text-secondary)",
+                      }}
+                      title="Run AI Scan"
                     >
-                      {c.last_scanned_at
-                        ? new Date(c.last_scanned_at).toLocaleDateString()
-                        : "Never"}
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-2 justify-end">
-                        <button
-                          onClick={() => triggerScan(c.id)}
-                          disabled={
-                            scanning === c.id || c.status === "scanning"
-                          }
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors disabled:opacity-40"
-                          style={{
-                            background: "var(--accent-muted)",
-                            color: "var(--accent)",
-                          }}
-                        >
-                          <ScanLine
-                            size={12}
-                            className={
-                              scanning === c.id ? "animate-spin-slow" : ""
-                            }
-                          />
-                          Scan
-                        </button>
-                        <Link
-                          href={`/contracts/${c.id}`}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
-                          style={{
-                            background: "var(--bg-surface-raised)",
-                            color: "var(--text-secondary)",
-                            border: "1px solid var(--border-subtle)",
-                          }}
-                        >
-                          View <ChevronRight size={12} />
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                      {isScanning ? (
+                        <Loader2 size={12} className="animate-spin-slow" />
+                      ) : (
+                        <ScanLine size={12} />
+                      )}
+                    </button>
+                    <Link
+                      href={`/contracts/${c.id}`}
+                      className="p-1.5 rounded-md transition-colors"
+                      style={{
+                        background: "var(--bg-surface-raised)",
+                        border: "1px solid var(--border-subtle)",
+                        color: "var(--text-secondary)",
+                      }}
+                      title="View details"
+                    >
+                      <ChevronRight size={12} />
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
+
+      {filtered.length > 0 && (
+        <p className="text-xs mt-3 text-center tabular-nums" style={{ color: "var(--text-disabled)" }}>
+          Showing {filtered.length} of {contracts.length} contracts
+        </p>
+      )}
     </div>
   );
 }
