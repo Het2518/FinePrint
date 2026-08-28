@@ -74,6 +74,7 @@ The Next.js application acts as the control plane for the system.
   - Allows Admins to manage MCP Connections and their allowed Security Scopes.
 
 ### 5.2 State Management & Best Practices
+
 - **API Wrapper:** All backend communication routes through a centralized `src/lib/api.ts` which handles authorization headers and error catching.
 - **Hydration Safety:** The `AppShell` component handles authentication state checks securely on the client side, suppressing hydration mismatches caused by browser extensions via `suppressHydrationWarning`.
 
