@@ -158,8 +158,17 @@ function Connector({ fromColor, toColor, isDone, isActive }) {
   );
 }
 
+const LIVE_SCAN_STYLES = `
+  @keyframes lsm-ping  { 0% { transform:scale(1); opacity:.6; } 100% { transform:scale(2); opacity:0; } }
+  @keyframes lsm-beam  { 0% { transform:translateX(-100%); } 100% { transform:translateX(300%); } }
+  @keyframes lsm-log   { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes lsm-spin  { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+  @keyframes lsm-dot   { 0%,100% { opacity:1; } 50% { opacity:.35; } }
+  @keyframes lsm-bar   { 0% { transform:translateX(-100%); } 50% { transform:translateX(80%); } 100% { transform:translateX(250%); } }
+`;
+
 // ── Main component ─────────────────────────────────────────────────────────────
-export default function LiveScanMonitor({ fileName, visible, externalStage }) {
+export default function LiveScanMonitor({ fileName, visible, externalStage, onClose }) {
   const [logLines, setLogLines] = useState([AGENTS[0].logs[0]]);
   const [logAgentColor, setLogAgentColor] = useState(AGENTS[0].color);
   const [elapsed, setElapsed]   = useState(0);
@@ -240,14 +249,7 @@ export default function LiveScanMonitor({ fileName, visible, externalStage }) {
       alignItems: "center", justifyContent: "center",
       padding: 16,
     }}>
-      <style>{`
-        @keyframes lsm-ping  { 0% { transform:scale(1); opacity:.6; } 100% { transform:scale(2); opacity:0; } }
-        @keyframes lsm-beam  { 0% { transform:translateX(-100%); } 100% { transform:translateX(300%); } }
-        @keyframes lsm-log   { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes lsm-spin  { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
-        @keyframes lsm-dot   { 0%,100% { opacity:1; } 50% { opacity:.35; } }
-        @keyframes lsm-bar   { 0% { transform:translateX(-100%); } 50% { transform:translateX(80%); } 100% { transform:translateX(250%); } }
-      `}</style>
+      <style dangerouslySetInnerHTML={{ __html: LIVE_SCAN_STYLES }} />
 
       <div style={{
         width: "100%", maxWidth: 880,
@@ -290,10 +292,31 @@ export default function LiveScanMonitor({ fileName, visible, externalStage }) {
               {fileName}
             </p>
           </div>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.08em" }}>Elapsed</div>
-            <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "monospace", letterSpacing: "-0.05em", color: curAgent.color }}>
-              {String(Math.floor(elapsed / 60)).padStart(2, "0")}:{String(elapsed % 60).padStart(2, "0")}
+          <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+            <button 
+              onClick={onClose}
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "rgba(255,255,255,0.7)",
+                fontSize: 10,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                padding: "4px 8px",
+                borderRadius: 4,
+                cursor: "pointer",
+                transition: "all 0.2s"
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,0,0,0.2)"; e.currentTarget.style.color = "#fff"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
+            >
+              Close Overlay
+            </button>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Elapsed</div>
+              <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "monospace", letterSpacing: "-0.05em", color: curAgent.color, marginTop: -4 }}>
+                {String(Math.floor(elapsed / 60)).padStart(2, "0")}:{String(elapsed % 60).padStart(2, "0")}
+              </div>
             </div>
           </div>
         </div>

@@ -13,12 +13,12 @@ import TimelineEvent from "@/app/contracts/components/TimelineEvent";
 import EmptyState from "@/components/ui/EmptyState";
 import CurrencyValue from "@/components/ui/CurrencyValue";
 import LiveScanMonitor from "@/app/contracts/components/LiveScanMonitor";
-import {
 import Button from "@/components/ui/Button";
+import {
   ArrowLeft, ScanLine, Loader2, FileText, RotateCcw,
   Calendar, DollarSign, RefreshCw, AlertTriangle, Cpu,
-  CheckCircle2, Clock, Building2, Zap, Users } from
-"lucide-react";
+  CheckCircle2, Clock, Building2, Zap, Users, Trash2
+} from "lucide-react";
 
 
 
@@ -148,6 +148,16 @@ export default function ContractDetailPage() {
     }, 3000);
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm(`Are you sure you want to delete "${contract?.file_name}"? This cannot be undone.`)) return;
+    try {
+      await api.deleteContract(id);
+      router.push("/contracts");
+    } catch (err) {
+      alert(err.message || "Failed to delete contract");
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen p-6 lg:p-8">
@@ -224,7 +234,17 @@ export default function ContractDetailPage() {
   return (
     <div className="min-h-screen">
       {/* Live Scan Overlay */}
-      <LiveScanMonitor fileName={contract?.file_name ?? ""} visible={scanning} externalStage={liveStage} />
+      <LiveScanMonitor 
+        fileName={contract?.file_name ?? ""} 
+        visible={scanning} 
+        externalStage={liveStage} 
+        onClose={() => {
+          setScanning(false);
+          scanningRef.current = false;
+          setLiveStage(null);
+          load(true);
+        }}
+      />
 
       {/* Back nav */}
       <div className="px-6 lg:px-8 pt-6 pb-0">
@@ -255,6 +275,13 @@ export default function ContractDetailPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            <Button
+              onClick={handleDelete}
+              className="p-2 rounded-md transition-colors"
+              style={{ background: "var(--bg-surface)", border: "1px solid var(--status-error-border)", color: "var(--status-error)" }}
+              title="Delete Contract">
+              <Trash2 size={14} />
+            </Button>
             <Button
               onClick={() => load(true)}
               className="p-2 rounded-md transition-colors"

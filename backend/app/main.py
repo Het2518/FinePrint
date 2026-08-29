@@ -33,6 +33,9 @@ def get_scheduler() -> BackgroundScheduler:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
+    from app.core.database import Base, engine
+    Base.metadata.create_all(bind=engine)
+    
     scheduler = get_scheduler()
     
     # Add jobs if they don't already exist in Redis

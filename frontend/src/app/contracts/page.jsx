@@ -9,7 +9,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import CurrencyValue from "@/components/ui/CurrencyValue";
 import {
   Search, Upload, RefreshCw, ScanLine, FileText, Loader2,
-  ChevronRight, RotateCcw, X, Mail, HardDrive, Globe, Download,
+  ChevronRight, RotateCcw, X, Mail, HardDrive, Globe, Download, Trash2,
 } from "lucide-react";
 import LiveScanMonitor from "@/app/contracts/components/LiveScanMonitor";
 import Button from "@/components/ui/Button";
@@ -134,6 +134,16 @@ export default function ContractsPage() {
     }, 3000);
   };
 
+  const handleDelete = async (id, fileName) => {
+    if (!window.confirm(`Are you sure you want to delete "${fileName}"? This cannot be undone.`)) return;
+    try {
+      await api.deleteContract(id);
+      await load(true);
+    } catch (err) {
+      alert(err.message || "Failed to delete contract");
+    }
+  };
+
   const currency = orgSettings?.display_currency ?? "USD";
   const filtered = contracts.filter((c) => {
     if (!search) return true;
@@ -147,7 +157,16 @@ export default function ContractsPage() {
 
   return (
     <div className="w-full max-w-full">
-      <LiveScanMonitor fileName={activeContract?.file_name ?? ""} visible={!!scanning} externalStage={liveStage} />
+      <LiveScanMonitor 
+        fileName={activeContract?.file_name ?? ""} 
+        visible={!!scanning} 
+        externalStage={liveStage} 
+        onClose={() => {
+          setScanning(null);
+          setLiveStage(null);
+          load(true);
+        }}
+      />
       {/* Header */}
       <div className="flex items-center justify-between mb-6 animate-fade-in">
         <div>
@@ -409,6 +428,13 @@ export default function ContractsPage() {
                       }
                     }}
                   >
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => { e.preventDefault(); handleDelete(c.id, c.file_name); }}
+                      title="Delete contract"
+                      icon={<Trash2 size={13} style={{ color: "var(--status-error)" }} />}
+                    />
                     <Button
                       variant="ghost"
                       size="sm"

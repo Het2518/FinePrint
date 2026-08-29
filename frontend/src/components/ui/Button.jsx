@@ -14,7 +14,7 @@ export default function Button({
   ...props
 }) {
   const baseStyles =
-    "inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]";
+    "inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] whitespace-nowrap";
 
   const sizes = {
     sm: "px-3 py-1.5 text-xs",
@@ -24,7 +24,7 @@ export default function Button({
 
   const variants = {
     primary:
-      "bg-[var(--accent)] text-[var(--accent-text)] hover:opacity-90 shadow-[0_4px_14px_0_color-mix(in_srgb,var(--accent)_40%,transparent)] focus:ring-[var(--accent)]",
+      "bg-[var(--accent)] text-white hover:opacity-90 shadow-[0_4px_14px_0_color-mix(in_srgb,var(--accent)_40%,transparent)] focus:ring-[var(--accent)]",
     secondary:
       "bg-[var(--bg-surface-raised)] text-[var(--text-primary)] border border-[var(--border-subtle)] hover:bg-[var(--bg-surface-hover)] hover:border-[var(--border-strong)] shadow-sm focus:ring-[var(--text-secondary)]",
     danger:

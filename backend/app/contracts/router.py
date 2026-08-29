@@ -239,6 +239,26 @@ def trigger_scan(
     return {"message": "Scan triggered", "contract_id": contract_id}
 
 
+@router.delete("/{contract_id}", status_code=204)
+def delete_contract(
+    contract_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_user_or_admin),
+):
+    """Deletes a contract and its associated data."""
+    contract = (
+        db.query(Contract)
+        .filter(Contract.id == uuid.UUID(contract_id), Contract.org_id == current_user.org_id)
+        .first()
+    )
+    if not contract:
+        raise HTTPException(status_code=404, detail="Contract not found")
+        
+    db.delete(contract)
+    db.commit()
+    return None
+
+
 def _run_pipeline(contract_id: str, org_id: str, user_email: str):
     """Background task that runs the LangGraph pipeline for a contract."""
     from app.core.database import SessionLocal

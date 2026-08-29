@@ -67,3 +67,8 @@ class Decision(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     def __repr__(self) -> str:
         return f"<Decision contract={self.contract_id} action={self.recommended_action} status={self.approval_status}>"
+
+
+# Import at bottom to resolve SQLAlchemy string references for relationships
+from app.actions.action import Action
+from app.actions.outcome import Outcome

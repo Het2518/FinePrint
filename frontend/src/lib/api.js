@@ -50,6 +50,7 @@ export const api = {
     return apiFetch(`/contracts${qs ? `?${qs}` : ""}`);
   },
   getContract: (id) => apiFetch(`/contracts/${id}`),
+  deleteContract: (id) => apiFetch(`/contracts/${id}`, { method: "DELETE" }),
   triggerScan: (id) =>
   apiFetch(`/contracts/${id}/scan`, { method: "POST" }),
 
