@@ -2,12 +2,12 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
-import RiskBadge from "@/components/RiskBadge";
-import StatusBadge from "@/components/StatusBadge";
-import RiskMeter from "@/components/RiskMeter";
-import PolicyRuleRow from "@/components/PolicyRuleRow";
-import CurrencyValue from "@/components/CurrencyValue";
-import EmptyState from "@/components/EmptyState";
+import RiskBadge from "@/components/ui/RiskBadge";
+import StatusBadge from "@/components/ui/StatusBadge";
+import RiskMeter from "@/components/ui/RiskMeter";
+import PolicyRuleRow from "@/app/contracts/components/PolicyRuleRow";
+import CurrencyValue from "@/components/ui/CurrencyValue";
+import EmptyState from "@/components/ui/EmptyState";
 import Link from "next/link";
 import {
   Bell, CheckCircle2, XCircle, FileText, Users,

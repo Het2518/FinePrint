@@ -8,8 +8,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import settings
-from app.verification.verifier import run_daily_verification
+from app.core.config import settings
+from app.actions.verifier import run_daily_verification
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.redis import RedisJobStore
 
@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI):
     scheduler = get_scheduler()
     
     # Add jobs if they don't already exist in Redis
-    from app.jobs.retention import run_retention_cleanup
+    from app.common.retention import run_retention_cleanup
     scheduler.add_job(run_retention_cleanup, "interval", hours=24, id="retention_job", replace_existing=True)
     
     scheduler.add_job(run_daily_verification, "interval", hours=24, id="verification_job", replace_existing=True)

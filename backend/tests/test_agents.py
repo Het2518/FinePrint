@@ -38,7 +38,7 @@ def _make_state(overrides: dict = {}) -> dict:
 class TestDetectionAgent:
     def test_routes_to_continue_on_high_confidence(self):
         """High-confidence LLM output should set route='continue'."""
-        from app.agents.detection import _extract_json
+        from app.intelligence.detection import _extract_json
 
         raw = '```json\n{"vendor_name": "Salesforce", "confidence": 0.95}\n```'
         extracted = _extract_json(raw)
@@ -48,7 +48,7 @@ class TestDetectionAgent:
 
     def test_strips_think_blocks(self):
         """Should remove <think>...</think> blocks from Qwen output."""
-        from app.agents.detection import _extract_json
+        from app.intelligence.detection import _extract_json
 
         raw = '<think>Let me think...</think>{"vendor_name": "Slack", "confidence": 0.88}'
         extracted = _extract_json(raw)
@@ -60,12 +60,12 @@ class TestDetectionAgent:
         mock_response = MagicMock()
         mock_response.content = '{"vendor_name": "Unknown", "confidence": 0.3}'
 
-        with patch("app.agents.detection.llm") as mock_llm, \
-             patch("app.config.settings") as mock_settings:
+        with patch("app.intelligence.detection.llm") as mock_llm, \
+             patch("app.core.config.settings") as mock_settings:
             mock_llm.invoke.return_value = mock_response
             mock_settings.llm_confidence_threshold = 0.6
 
-            from app.agents.detection import run_detection_agent
+            from app.intelligence.detection import run_detection_agent
             state = _make_state({"raw_text": "Short ambiguous text"})
             result = run_detection_agent(state)
             assert result["route"] == "manual_review"
@@ -75,9 +75,9 @@ class TestDetectionAgent:
         mock_response = MagicMock()
         mock_response.content = "NOT VALID JSON AT ALL"
 
-        with patch("app.agents.detection.llm") as mock_llm:
+        with patch("app.intelligence.detection.llm") as mock_llm:
             mock_llm.invoke.return_value = mock_response
-            from app.agents.detection import run_detection_agent
+            from app.intelligence.detection import run_detection_agent
             state = _make_state()
             result = run_detection_agent(state)
             assert result["route"] == "manual_review"
@@ -93,9 +93,9 @@ class TestRiskAgent:
         mock_response = MagicMock()
         mock_response.content = '{"risk_type": "price_escalation", "risk_severity": "high", "evidence": "15% escalation"}'
 
-        with patch("app.agents.risk.llm") as mock_llm:
+        with patch("app.intelligence.risk.llm") as mock_llm:
             mock_llm.invoke.return_value = mock_response
-            from app.agents.risk import run_risk_agent
+            from app.intelligence.risk import run_risk_agent
             state = _make_state({
                 "clauses": {"vendor_name": "Salesforce", "price_escalation_pct": 15},
                 "usage_signals": None,
@@ -106,9 +106,9 @@ class TestRiskAgent:
 
     def test_returns_low_risk_on_failure(self):
         """Risk agent failure should fallback to low risk, not crash."""
-        with patch("app.agents.risk.llm") as mock_llm:
+        with patch("app.intelligence.risk.llm") as mock_llm:
             mock_llm.invoke.side_effect = Exception("API timeout")
-            from app.agents.risk import run_risk_agent
+            from app.intelligence.risk import run_risk_agent
             result = run_risk_agent(_make_state())
             assert result["risk_output"]["risk_severity"] == "low"
 
@@ -131,9 +131,9 @@ class TestFinanceAgent:
             "llm_confidence_note": "Based on contract value and 15% escalation",
         })
 
-        with patch("app.agents.finance.llm") as mock_llm:
+        with patch("app.intelligence.finance.llm") as mock_llm:
             mock_llm.invoke.return_value = mock_response
-            from app.agents.finance import run_finance_agent
+            from app.intelligence.finance import run_finance_agent
             state = _make_state({
                 "clauses": {"vendor_name": "Salesforce", "contract_value_annual": 120000},
                 "risk_output": {"risk_severity": "high"},
@@ -144,9 +144,9 @@ class TestFinanceAgent:
 
     def test_returns_zeros_on_failure(self):
         """Finance agent failure should fallback to zero savings, not crash."""
-        with patch("app.agents.finance.llm") as mock_llm:
+        with patch("app.intelligence.finance.llm") as mock_llm:
             mock_llm.invoke.side_effect = Exception("LLM unavailable")
-            from app.agents.finance import run_finance_agent
+            from app.intelligence.finance import run_finance_agent
             result = run_finance_agent(_make_state())
             assert result["finance_output"]["estimated_savings_if_cancelled"] == 0.0
 
@@ -171,8 +171,8 @@ class TestDecisionRules:
         mock_db = MagicMock()
         mock_db.query.return_value.filter.return_value.first.return_value = mock_org
 
-        with patch("app.rules.decision_rules.SessionLocal", return_value=mock_db):
-            from app.rules.decision_rules import apply_approval_rules
+        with patch("app.decisions.decision_rules.SessionLocal", return_value=mock_db):
+            from app.decisions.decision_rules import apply_approval_rules
             state = _make_state({
                 "org_id": "00000000-0000-0000-0000-000000000002",
                 "decision_output": {
@@ -193,8 +193,8 @@ class TestDecisionRules:
         mock_db = MagicMock()
         mock_db.query.return_value.filter.return_value.first.return_value = mock_org
 
-        with patch("app.rules.decision_rules.SessionLocal", return_value=mock_db):
-            from app.rules.decision_rules import apply_approval_rules
+        with patch("app.decisions.decision_rules.SessionLocal", return_value=mock_db):
+            from app.decisions.decision_rules import apply_approval_rules
             state = _make_state({
                 "org_id": "00000000-0000-0000-0000-000000000002",
                 "decision_output": {
@@ -215,8 +215,8 @@ class TestDecisionRules:
         mock_db = MagicMock()
         mock_db.query.return_value.filter.return_value.first.return_value = mock_org
 
-        with patch("app.rules.decision_rules.SessionLocal", return_value=mock_db):
-            from app.rules.decision_rules import apply_approval_rules
+        with patch("app.decisions.decision_rules.SessionLocal", return_value=mock_db):
+            from app.decisions.decision_rules import apply_approval_rules
             state = _make_state({
                 "org_id": "00000000-0000-0000-0000-000000000002",
                 "decision_output": {

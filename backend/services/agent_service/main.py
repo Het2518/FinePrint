@@ -41,7 +41,7 @@ def scan_contract(payload: dict):
     # Ensure the backend package is importable
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-    from app.orchestrator.graph import fineprint_graph
+    from app.intelligence.graph import fineprint_graph
 
     contract_id = payload.get("contract_id")
     org_id = payload.get("org_id")

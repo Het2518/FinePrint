@@ -12,8 +12,8 @@ import os
 # Add the backend/app path so models can be imported
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from app.database import Base
-from app.config import settings
+from app.core.database import Base
+from app.core.config import settings
 
 # Import all models so Alembic can detect them
 import app.models  # noqa: F401

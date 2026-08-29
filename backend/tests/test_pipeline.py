@@ -3,10 +3,10 @@ from dotenv import load_dotenv
 load_dotenv('.env')
 
 sys.path.insert(0, '.')
-from app.agents.detection import run_detection_agent
-from app.agents.risk import run_risk_agent
-from app.agents.finance import run_finance_agent
-from app.agents.decision import run_decision_agent
+from app.intelligence.detection import run_detection_agent
+from app.intelligence.risk import run_risk_agent
+from app.intelligence.finance import run_finance_agent
+from app.intelligence.decision import run_decision_agent
 
 sample_text = open('../sample_contract_salesforce.txt').read()
 

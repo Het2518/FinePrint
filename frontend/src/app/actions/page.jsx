@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
-import StatusBadge from "@/components/StatusBadge";
-import EmptyState from "@/components/EmptyState";
+import StatusBadge from "@/components/ui/StatusBadge";
+import EmptyState from "@/components/ui/EmptyState";
 import { Send, FileText, Loader2, Eye } from "lucide-react";
 
 function SkeletonBlock({ h = 56 }) {

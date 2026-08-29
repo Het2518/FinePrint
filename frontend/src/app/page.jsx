@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
-import CurrencyValue from "@/components/CurrencyValue";
-import EmptyState from "@/components/EmptyState";
+import CurrencyValue from "@/components/ui/CurrencyValue";
+import EmptyState from "@/components/ui/EmptyState";
 import Link from "next/link";
 import {
   FileText, TrendingDown, RefreshCw, CheckCircle2,

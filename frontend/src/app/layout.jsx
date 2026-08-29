@@ -1,7 +1,7 @@
 
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import AppShell from "@/components/AppShell";
+import AppShell from "@/components/layout/AppShell";
 import ThemeProvider from "@/components/ThemeProvider";
 import BisAttributeCleaner from "@/components/BisAttributeCleaner";
 import ExtensionErrorSuppressor from "@/components/ExtensionErrorSuppressor";

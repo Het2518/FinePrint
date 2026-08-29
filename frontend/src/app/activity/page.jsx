@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import EmptyState from "@/components/EmptyState";
-import TimelineEvent from "@/components/TimelineEvent";
+import EmptyState from "@/components/ui/EmptyState";
+import TimelineEvent from "@/app/contracts/components/TimelineEvent";
 import { Clock, Search, Cpu, User as UserIcon, X } from "lucide-react";
 
 function SkeletonBlock({ h = 56 }) {

@@ -20,7 +20,7 @@ async def lifespan(app: FastAPI):
 
     import sys, os
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
-    from app.ingestion.scheduler import run_ingestion_job
+    from app.common.scheduler import run_ingestion_job
 
     scheduler.add_job(run_ingestion_job, "interval", minutes=1, id="ingestion_job", replace_existing=True)
     scheduler.start()
@@ -60,8 +60,8 @@ async def parse_document(file: UploadFile = File(...)):
     import sys, os
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-    from app.ingestion.document_parser import extract_text_from_bytes as _parse
-    from app.ingestion.deduplication import compute_hash as compute_document_hash
+    from app.common.document_parser import extract_text_from_bytes as _parse
+    from app.common.deduplication import compute_hash as compute_document_hash
 
     contents = await file.read()
 

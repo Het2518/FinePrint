@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { Building2, RefreshCw, ChevronRight, Calendar, Search, X } from "lucide-react";
 import Link from "next/link";
-import RiskBadge from "@/components/RiskBadge";
+import RiskBadge from "@/components/ui/RiskBadge";
 
 function SkeletonRow() {
   return <div className="skeleton" style={{ height: 52, borderRadius: 6 }} />;

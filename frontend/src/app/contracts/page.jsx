@@ -3,15 +3,15 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import RiskBadge from "@/components/RiskBadge";
-import StatusBadge from "@/components/StatusBadge";
-import EmptyState from "@/components/EmptyState";
-import CurrencyValue from "@/components/CurrencyValue";
+import RiskBadge from "@/components/ui/RiskBadge";
+import StatusBadge from "@/components/ui/StatusBadge";
+import EmptyState from "@/components/ui/EmptyState";
+import CurrencyValue from "@/components/ui/CurrencyValue";
 import {
   Search, Upload, RefreshCw, ScanLine, FileText, Loader2,
   ChevronRight, RotateCcw, X, Mail, HardDrive, Globe, Download,
 } from "lucide-react";
-import LiveScanMonitor from "@/components/LiveScanMonitor";
+import LiveScanMonitor from "@/app/contracts/components/LiveScanMonitor";
 
 const SOURCE_ICONS = {
   gmail:         <Mail size={12} />,

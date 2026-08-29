@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
-import StatusBadge from "@/components/StatusBadge";
+import StatusBadge from "@/components/ui/StatusBadge";
 import { Trash2, Loader2, Save, CheckCircle2, DollarSign, Sliders, Link as LinkIcon, Plus } from "lucide-react";
 
 const MCP_SERVERS = [

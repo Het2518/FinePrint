@@ -4,15 +4,15 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import RiskBadge from "@/components/RiskBadge";
-import StatusBadge from "@/components/StatusBadge";
-import PipelineNode from "@/components/PipelineNode";
-import PolicyRuleRow from "@/components/PolicyRuleRow";
-import RiskMeter from "@/components/RiskMeter";
-import TimelineEvent from "@/components/TimelineEvent";
-import EmptyState from "@/components/EmptyState";
-import CurrencyValue from "@/components/CurrencyValue";
-import LiveScanMonitor from "@/components/LiveScanMonitor";
+import RiskBadge from "@/components/ui/RiskBadge";
+import StatusBadge from "@/components/ui/StatusBadge";
+import PipelineNode from "@/app/contracts/components/PipelineNode";
+import PolicyRuleRow from "@/app/contracts/components/PolicyRuleRow";
+import RiskMeter from "@/components/ui/RiskMeter";
+import TimelineEvent from "@/app/contracts/components/TimelineEvent";
+import EmptyState from "@/components/ui/EmptyState";
+import CurrencyValue from "@/components/ui/CurrencyValue";
+import LiveScanMonitor from "@/app/contracts/components/LiveScanMonitor";
 import {
   ArrowLeft, ScanLine, Loader2, FileText, RotateCcw,
   Calendar, DollarSign, RefreshCw, AlertTriangle, Cpu,
