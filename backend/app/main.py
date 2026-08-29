@@ -68,7 +68,7 @@ def health_check():
     return {"status": "ok", "service": "FinePrint API"}
 
 
-from app.api import auth, contracts, decisions, actions, dashboard, mcp, settings as org_settings, audit, chat, analytics, notifications
+from app.api import auth, contracts, decisions, actions, dashboard, mcp, settings as org_settings, audit, chat, analytics, notifications, renewals, export, vendors, team, webhooks
 
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(contracts.router, prefix="/contracts", tags=["Contracts"])
@@ -81,4 +81,9 @@ app.include_router(audit.router, prefix="/audit", tags=["Audit"])
 app.include_router(chat.router, prefix="/chat", tags=["Chat"])
 app.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
 app.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])
+app.include_router(renewals.router, prefix="/renewals", tags=["Renewals"])
+app.include_router(export.router, prefix="/export", tags=["Export"])
+app.include_router(vendors.router, prefix="/vendors", tags=["Vendors"])
+app.include_router(team.router, prefix="/team", tags=["Team"])
+app.include_router(webhooks.router, prefix="/webhooks", tags=["Webhooks"])
 

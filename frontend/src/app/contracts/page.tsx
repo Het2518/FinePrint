@@ -10,7 +10,7 @@ import CurrencyValue from "@/components/CurrencyValue";
 import {
   Search, Upload, RefreshCw, ScanLine, FileText, Loader2,
   ChevronRight, RotateCcw, AlertTriangle, Filter, X,
-  Mail, HardDrive, Globe,
+  Mail, HardDrive, Globe, Download,
 } from "lucide-react";
 
 const SOURCE_ICONS: Record<string, React.ReactNode> = {
@@ -28,7 +28,20 @@ export default function ContractsPage() {
   const [uploading, setUploading] = useState(false);
   const [scanning, setScanning] = useState<string | null>(null);
   const [orgSettings, setOrgSettings] = useState<any>(null);
+  const [showExport, setShowExport] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const exportRef = useRef<HTMLDivElement>(null);
+
+  // Close export dropdown on click outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) {
+        setShowExport(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const load = useCallback(async (background = false) => {
     if (!background) setLoading(true);
@@ -108,6 +121,43 @@ export default function ContractsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* Export Dropdown */}
+          <div className="relative" ref={exportRef}>
+            <button
+              onClick={() => setShowExport(!showExport)}
+              className="flex items-center gap-2 p-2 rounded-md transition-colors"
+              style={{
+                background: "var(--bg-surface)",
+                border: "1px solid var(--border-subtle)",
+                color: "var(--text-secondary)",
+              }}
+              title="Export CSV"
+            >
+              <Download size={14} />
+            </button>
+            {showExport && (
+              <div
+                className="absolute right-0 top-full mt-1 w-48 rounded-md shadow-lg z-50 overflow-hidden"
+                style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}
+              >
+                <button
+                  onClick={() => { window.open(api.exportContractsUrl(), "_blank"); setShowExport(false); }}
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  Export Contracts (CSV)
+                </button>
+                <button
+                  onClick={() => { window.open(api.exportDecisionsUrl(), "_blank"); setShowExport(false); }}
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  Export Decisions (CSV)
+                </button>
+              </div>
+            )}
+          </div>
+
           <button
             onClick={() => load(true)}
             disabled={loading}

@@ -7,7 +7,7 @@ import {
   LayoutDashboard, FileText, Bell, Zap, Settings, Shield,
   LogOut, ChevronsLeft, ChevronsRight, Clock, MessageSquare,
   BarChart3, Sun, Moon, CheckCircle2, AlertTriangle, Package,
-  X,
+  X, Calendar, Building2, Users,
 } from "lucide-react";
 import { api } from "@/lib/api";
 
@@ -18,6 +18,8 @@ const NAV_GROUPS = [
       { href: "/", icon: LayoutDashboard, label: "Dashboard" },
       { href: "/contracts", icon: FileText, label: "Contracts" },
       { href: "/chat", icon: MessageSquare, label: "AI Chat" },
+      { href: "/renewals", icon: Calendar, label: "Renewals" },
+      { href: "/vendors", icon: Building2, label: "Vendors" },
       { href: "/analytics", icon: BarChart3, label: "Analytics" },
     ],
   },
@@ -32,6 +34,7 @@ const NAV_GROUPS = [
   {
     label: "System",
     items: [
+      { href: "/team", icon: Users, label: "Team" },
       { href: "/settings", icon: Settings, label: "Settings" },
     ],
   },

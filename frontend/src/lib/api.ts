@@ -121,4 +121,34 @@ export const api = {
 
   // Notifications
   listNotifications: () => apiFetch<any>("/notifications"),
+
+  // Renewals Calendar
+  getRenewals: () => apiFetch<any>("/renewals"),
+
+  // Export (direct download links — use window.open)
+  exportContractsUrl: () => `${API_BASE}/export/contracts`,
+  exportDecisionsUrl: () => `${API_BASE}/export/decisions`,
+
+  // Vendor Intelligence
+  getVendors: () => apiFetch<any>("/vendors"),
+
+  // Team Management
+  listTeam: () => apiFetch<any>("/team"),
+  inviteUser: (data: { email: string; full_name?: string; role: string }) =>
+    apiFetch<any>("/team/invite", { method: "POST", body: JSON.stringify(data) }),
+  updateUserRole: (userId: string, data: { role: string }) =>
+    apiFetch<any>(`/team/${userId}/role`, { method: "PATCH", body: JSON.stringify(data) }),
+  removeUser: (userId: string) =>
+    apiFetch<any>(`/team/${userId}`, { method: "DELETE" }),
+
+  // Webhooks
+  listWebhooks: () => apiFetch<any>("/webhooks"),
+  createWebhook: (data: { url: string; description?: string; event_types?: string[] }) =>
+    apiFetch<any>("/webhooks", { method: "POST", body: JSON.stringify(data) }),
+  updateWebhook: (id: string, data: { is_active?: boolean; description?: string }) =>
+    apiFetch<any>(`/webhooks/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  deleteWebhook: (id: string) =>
+    apiFetch<any>(`/webhooks/${id}`, { method: "DELETE" }),
+  testWebhook: (id: string) =>
+    apiFetch<any>(`/webhooks/${id}/test`, { method: "POST" }),
 };
