@@ -13,12 +13,18 @@ from app.verification.verifier import run_daily_verification
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.redis import RedisJobStore
 
+import urllib.parse
+
 def get_scheduler() -> BackgroundScheduler:
+    url = urllib.parse.urlparse(settings.redis_url)
     jobstores = {
         "default": RedisJobStore(
             jobs_key="fineprint_jobs",
             run_times_key="fineprint_running",
-            url=settings.redis_url
+            host=url.hostname or "localhost",
+            port=url.port or 6379,
+            db=int(url.path[1:]) if url.path and len(url.path) > 1 else 0,
+            password=url.password
         )
     }
     scheduler = BackgroundScheduler(jobstores=jobstores)

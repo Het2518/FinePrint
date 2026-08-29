@@ -276,7 +276,7 @@ def _run_pipeline(contract_id: str, org_id: str, user_email: str):
         import logging
         logging.getLogger(__name__).error(f"Pipeline failed for contract {contract_id}: {e}")
         if contract:
-            contract.status = ContractStatus.active
+            contract.status = ContractStatus.parse_failed
             db.commit()
     finally:
         db.close()
@@ -310,13 +310,25 @@ def _persist_pipeline_results(contract: Contract, result: dict, db: Session, use
 
     decision_data = result.get("decision_output")
     if decision_data:
+        # Safely cast LLM strings to enum values; fall back to None on unknown values
+        raw_risk = (decision_data.get("risk") or "").strip().lower()
+        raw_action = (decision_data.get("recommended_action") or "").strip().lower()
+        try:
+            risk_enum = RiskLevel(raw_risk)
+        except ValueError:
+            risk_enum = None
+        try:
+            action_enum = RecommendedAction(raw_action)
+        except ValueError:
+            action_enum = RecommendedAction.manual_review
+
         decision = Decision(
             contract_id=contract.id,
             situation=decision_data.get("situation"),
             root_cause=decision_data.get("root_cause"),
-            recommended_action=decision_data.get("recommended_action"),
+            recommended_action=action_enum,
             expected_impact_json=decision_data.get("expected_impact"),
-            risk_level=decision_data.get("risk"),
+            risk_level=risk_enum,
             confidence=decision_data.get("confidence"),
             embedding=decision_data.get("embedding"),
             requires_approval=result.get("requires_approval", True),
@@ -325,9 +337,61 @@ def _persist_pipeline_results(contract: Contract, result: dict, db: Session, use
         )
         db.add(decision)
 
-    contract.last_scanned_at = datetime.now(timezone.utc)
+    # ── Persist Agent Runs for the UI Pipeline Tab ──
+    now = datetime.now(timezone.utc)
+    # Detection
+    if clauses_data:
+        db.add(AgentRun(
+            contract_id=contract.id,
+            agent_name="detection",
+            status=AgentRunStatus.completed,
+            reasoning_summary="Successfully extracted contract clauses via LLM.",
+            confidence=result.get("detection_confidence", 0.9),
+            started_at=now,
+            completed_at=now,
+        ))
+    
+    # Risk
+    if result.get("risk_output"):
+        db.add(AgentRun(
+            contract_id=contract.id,
+            agent_name="risk",
+            status=AgentRunStatus.completed,
+            reasoning_summary=result["risk_output"].get("risk_severity", "Analyzed risk factors."),
+            confidence=0.9,
+            started_at=now,
+            completed_at=now,
+        ))
+
+    # Finance
+    if result.get("finance_output"):
+        db.add(AgentRun(
+            contract_id=contract.id,
+            agent_name="finance",
+            status=AgentRunStatus.completed,
+            reasoning_summary=f"Estimated savings: {result['finance_output'].get('estimated_savings_if_cancelled', 0)}",
+            confidence=0.9,
+            started_at=now,
+            completed_at=now,
+        ))
+
+    # Decision
+    if decision_data:
+        db.add(AgentRun(
+            contract_id=contract.id,
+            agent_name="decision",
+            status=AgentRunStatus.completed,
+            reasoning_summary=decision_data.get("situation", "Synthesized final decision."),
+            confidence=decision_data.get("confidence", 0.9),
+            mcp_tool_calls_json=result.get("mcp_tool_calls", []),
+            started_at=now,
+            completed_at=now,
+        ))
+
+    contract.last_scanned_at = now
     contract.status = ContractStatus.active if result.get("route") != "manual_review" else ContractStatus.manual_review
     db.commit()
+
 
     # Fire email notifications based on the result
     if decision_data and clauses_data:
@@ -372,6 +436,6 @@ def _persist_pipeline_results(contract: Contract, result: dict, db: Session, use
             }
             threading.Thread(
                 target=send_slack_approval_request,
-                args=(org_id, str(contract.id), slack_decision_details),
+                args=(str(contract.org_id), str(contract.id), slack_decision_details),
                 daemon=True
             ).start()

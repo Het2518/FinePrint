@@ -5,3 +5,12 @@ A RENEGOTIATE_SEATS action was just approved and executed for contract `5a1ab0a6
 The outcome verification job will automatically check this vendor's usage in 30 days to confirm the financial impact.
 
 ----------------------------------------
+[2026-08-29T19:21:09.334830] [Channel: #finance-approvals]
+*High-Risk Contract Detected: CloudScale SaaS Solutions* :warning:
+    
+The FinePrint AI pipeline has recommended an action that requires human approval.
+*Recommended Action*: MANUAL_REVIEW
+*Estimated Savings*: $120,000.00
+
+<http://localhost:3000/contracts/326b21f6-eb1f-447b-8cf7-c3986933411a|Click here to review the agent reasoning trail and approve>
+----------------------------------------

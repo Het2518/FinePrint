@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 def manual_review_node(state: ContractScanState) -> ContractScanState:
     """Routes low-confidence extractions to manual review."""
     logger.info(f"[Orchestrator] Contract {state['contract_id']} → manual_review")
-    return {**state, "route": "done"}
+    return {**state, "route": "manual_review"}
 
 
 def fetch_usage_signals_node(state: ContractScanState) -> ContractScanState:
@@ -75,7 +75,7 @@ def fetch_usage_signals_node(state: ContractScanState) -> ContractScanState:
 def auto_log_node(state: ContractScanState) -> ContractScanState:
     """Low-value decisions auto-approved without human review (FR-DEC-3)."""
     logger.info(f"[Orchestrator] Auto-logging decision for contract={state['contract_id']}")
-    return {**state, "route": "done"}
+    return {**state, "route": "auto_log"}
 
 
 def notify_node(state: ContractScanState) -> ContractScanState:
@@ -120,16 +120,14 @@ def build_graph() -> StateGraph:
         route_after_detection,
         {
             "manual_review": "manual_review",
-            "continue": ["fetch_usage_signals", "finance_agent"], # PARALLEL FAN-OUT
+            "continue": "fetch_usage_signals",
         },
     )
     graph.add_edge("manual_review", END)
 
-    # Parallel branches
+    # Sequential branches
     graph.add_edge("fetch_usage_signals", "risk_agent")
-    
-    # FAN-IN to Decision agent
-    graph.add_edge("risk_agent", "decision_agent")
+    graph.add_edge("risk_agent", "finance_agent")
     graph.add_edge("finance_agent", "decision_agent")
     
     graph.add_edge("decision_agent", "rule_check")
