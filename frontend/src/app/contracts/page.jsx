@@ -11,6 +11,7 @@ import {
   Search, Upload, RefreshCw, ScanLine, FileText, Loader2,
   ChevronRight, RotateCcw, X, Mail, HardDrive, Globe, Download,
 } from "lucide-react";
+import LiveScanMonitor from "@/components/LiveScanMonitor";
 
 const SOURCE_ICONS = {
   gmail:         <Mail size={12} />,
@@ -30,6 +31,7 @@ export default function ContractsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [uploading, setUploading] = useState(false);
   const [scanning, setScanning] = useState(null);
+  const [liveStage, setLiveStage] = useState(null);
   const [orgSettings, setOrgSettings] = useState(null);
   const [showExport, setShowExport] = useState(false);
   const fileInputRef = useRef(null);
@@ -79,9 +81,53 @@ export default function ContractsPage() {
   };
 
   const triggerScan = async (id) => {
+    if (scanning) return;
     setScanning(id);
-    try { await api.triggerScan(id); await load(true); }
-    finally { setScanning(null); }
+    setLiveStage(0);
+
+    try {
+      await api.triggerScan(id);
+    } catch (e) {
+      console.error(e);
+      setScanning(null);
+      setLiveStage(null);
+      return;
+    }
+
+    const TOTAL = 7; // number of stages
+    const STAGE_MS = 3800;
+    let backendDone = false;
+    let animDone = false;
+
+    const finishMonitor = async () => {
+      setScanning(null);
+      setLiveStage(null);
+      await load(true);
+    };
+
+    let stage = 0;
+    const stageTimer = setInterval(() => {
+      stage += 1;
+      if (stage >= TOTAL) {
+        clearInterval(stageTimer);
+        animDone = true;
+        if (backendDone) finishMonitor();
+      } else {
+        setLiveStage(stage);
+      }
+    }, STAGE_MS);
+
+    const pollTimer = setInterval(async () => {
+      try {
+        const freshList = await api.listContracts();
+        const c = freshList.contracts?.find((x) => x.id === id);
+        if (c && c.status !== "scanning") {
+          clearInterval(pollTimer);
+          backendDone = true;
+          if (animDone) finishMonitor();
+        }
+      } catch (_) {}
+    }, 3000);
   };
 
   const currency = orgSettings?.display_currency ?? "USD";
@@ -93,9 +139,11 @@ export default function ContractsPage() {
            c.status?.toLowerCase().includes(q);
   });
   const hasActiveFilters = riskFilter || statusFilter;
+  const activeContract = contracts.find(c => c.id === scanning);
 
   return (
     <div className="w-full max-w-full">
+      <LiveScanMonitor fileName={activeContract?.file_name ?? ""} visible={!!scanning} externalStage={liveStage} />
       {/* Header */}
       <div className="flex items-center justify-between mb-6 animate-fade-in">
         <div>
