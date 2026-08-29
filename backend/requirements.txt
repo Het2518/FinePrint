@@ -12,6 +12,10 @@ alembic==1.13.2
 psycopg2-binary==2.9.9
 pgvector==0.3.2
 
+# --- Vector Store (ChromaDB for RAG) ---
+chromadb==0.5.3
+sentence-transformers==3.0.1
+
 # --- Data Validation ---
 pydantic==2.8.2
 pydantic-settings==2.3.4

@@ -56,6 +56,10 @@ class Settings(BaseSettings):
     # --- Frontend ---
     frontend_url: str = "http://localhost:3000"
 
+    # --- Microservice URLs (used by API Gateway to proxy requests) ---
+    agent_service_url: str = "http://localhost:8001"
+    ingestion_service_url: str = "http://localhost:8002"
+
     # --- LangSmith Tracing (optional) ---
     langchain_tracing_v2: str = "false"
     langchain_project: str = "FinePrint"

@@ -1,7 +1,7 @@
 """
-FinePrint — Decision Agent
-Synthesizes Detection, Risk, and Finance agent outputs into a single recommendation.
-LLM generates the NARRATIVE. Deterministic Finance numbers override LLM savings estimates.
+FinePrint — Decision Agent (ChromaDB-powered RAG)
+Synthesizes Detection, Risk, and Finance agent outputs into a recommendation.
+Uses ChromaDB for semantic retrieval of past successful decisions.
 """
 
 import json
@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 llm = ChatGroq(api_key=settings.groq_api_key, model_name=settings.groq_model, temperature=0.1, max_tokens=768)
 
+
 def _extract_json(raw: str) -> str:
     """Strip Qwen think-blocks, markdown fences, extract first JSON object."""
     raw = re.sub(r"<think>.*?</think>", "", raw or "", flags=re.DOTALL)
@@ -26,19 +27,75 @@ def _extract_json(raw: str) -> str:
     return match.group(0) if match else raw
 
 
-from sentence_transformers import SentenceTransformer
+# ── ChromaDB setup ─────────────────────────────────────────────────────────────
 
-# Load embedding model globally so it's cached in memory
-_embedder = SentenceTransformer("all-MiniLM-L6-v2")
+import chromadb
+from chromadb.utils import embedding_functions
 
-def _generate_embedding(text: str) -> list[float]:
-    """Real semantic embedding using SentenceTransformer (padded to 1536-dim)."""
-    # Generate 384-dim vector
-    vec = _embedder.encode(text).tolist()
-    # Repeat 4 times to fill the 1536-dim Vector column without breaking schema
-    # (Mathematically preserves relative euclidean distances)
-    return vec * 4
+_chroma_client = None
+_chroma_collection = None
 
+def _get_chroma_collection():
+    """Lazily initialises the persistent ChromaDB client and collection."""
+    global _chroma_client, _chroma_collection
+    if _chroma_collection is not None:
+        return _chroma_collection
+
+    # Persist data locally so it survives restarts
+    _chroma_client = chromadb.PersistentClient(path="./.chromadb_store")
+
+    # Use the built-in sentence-transformers embedding function (all-MiniLM-L6-v2)
+    ef = embedding_functions.SentenceTransformerEmbeddingFunction(
+        model_name="all-MiniLM-L6-v2"
+    )
+
+    _chroma_collection = _chroma_client.get_or_create_collection(
+        name="fineprint_decisions",
+        embedding_function=ef,
+        metadata={"hnsw:space": "cosine"},
+    )
+    return _chroma_collection
+
+
+def _store_decision_in_chroma(decision_id: str, vendor: str, risk_type: str, action: str, outcome: str):
+    """Upserts a completed decision into ChromaDB for future RAG retrieval."""
+    try:
+        col = _get_chroma_collection()
+        document = f"Vendor: {vendor}. Risk: {risk_type}. Action: {action}. Outcome: {outcome}"
+        col.upsert(
+            ids=[decision_id],
+            documents=[document],
+            metadatas=[{"vendor": vendor, "action": action, "outcome": outcome}],
+        )
+        logger.info(f"[ChromaDB] Stored decision {decision_id}")
+    except Exception as e:
+        logger.warning(f"[ChromaDB] Failed to store decision: {e}")
+
+
+def _query_historical_outcomes(vendor: str, risk_type: str) -> str:
+    """Retrieves the top-3 most similar past decisions from ChromaDB."""
+    try:
+        col = _get_chroma_collection()
+        if col.count() == 0:
+            return "None"
+
+        query_text = f"Vendor: {vendor}. Risk: {risk_type}"
+        results = col.query(
+            query_texts=[query_text],
+            n_results=min(3, col.count()),
+        )
+
+        docs = results.get("documents", [[]])[0]
+        if not docs:
+            return "None"
+
+        return "\n".join(f"- {doc}" for doc in docs)
+    except Exception as e:
+        logger.warning(f"[ChromaDB] RAG query failed: {e}")
+        return "None"
+
+
+# ── Prompts ────────────────────────────────────────────────────────────────────
 
 DECISION_SYSTEM_PROMPT = """You are a SaaS procurement advisor.
 Given contract data and risk/finance analysis, write a concise business recommendation.
@@ -63,6 +120,8 @@ recommended_action must be one of: cancel, renegotiate_seats, renew, manual_revi
 risk must be one of: low, medium, high"""
 
 
+# ── Main node ─────────────────────────────────────────────────────────────────
+
 def run_decision_agent(state: ContractScanState) -> ContractScanState:
     """LangGraph node: Decision Agent. Runs after Risk and Finance agents join."""
     logger.info(f"[Decision Agent] Starting for contract={state['contract_id']}")
@@ -71,38 +130,11 @@ def run_decision_agent(state: ContractScanState) -> ContractScanState:
     risk_output = state.get("risk_output", {})
     finance_output = state.get("finance_output", {})
 
-    db = None
-    historical_outcomes_str = "None"
-    embedding = None
-    try:
-        from app.database import SessionLocal
-        from app.models.decision import Decision
-        from app.models.outcome import Outcome, OutcomeResult
-        
-        db = SessionLocal()
-        context_text = f"Vendor: {clauses.get('vendor_name', '')} - Risk: {risk_output.get('risk_type', '')}"
-        embedding = _generate_embedding(context_text)
-        
-        # Search for similar decisions with verified outcomes
-        past_decisions = (
-            db.query(Decision, Outcome)
-            .join(Outcome, Decision.id == Outcome.decision_id)
-            .filter(Outcome.result == OutcomeResult.success)
-            .order_by(Decision.embedding.l2_distance(embedding))
-            .limit(3)
-            .all()
-        )
-        
-        if past_decisions:
-            hist_list = []
-            for d, o in past_decisions:
-                hist_list.append(f"- Past action: {d.recommended_action.value if d.recommended_action else 'unknown'}, Result: {o.actual_outcome}")
-            historical_outcomes_str = "\n".join(hist_list)
-    except Exception as e:
-        logger.error(f"[Decision Agent] Error fetching historical context: {e}")
-    finally:
-        if db:
-            db.close()
+    vendor = clauses.get("vendor_name", "unknown")
+    risk_type = risk_output.get("risk_type", "")
+
+    # ── RAG: query ChromaDB for historical context ─────────────────────────────
+    historical_outcomes_str = _query_historical_outcomes(vendor, risk_type)
 
     try:
         response = llm.invoke([
@@ -119,7 +151,7 @@ def run_decision_agent(state: ContractScanState) -> ContractScanState:
         logger.debug(f"[Decision Agent] Raw output: {raw[:400]}")
         decision_output = json.loads(_extract_json(raw))
 
-        # Override LLM savings with deterministic Finance Agent numbers
+        # Use finance agent's LLM-estimated savings as the canonical impact figure
         finance_savings = finance_output.get("estimated_savings_if_cancelled", 0)
         renegotiate_savings = finance_output.get("estimated_savings_if_renegotiated", 0)
         rec = decision_output.get("recommended_action", "manual_review")
@@ -131,7 +163,6 @@ def run_decision_agent(state: ContractScanState) -> ContractScanState:
             decision_output["expected_impact"]["savings_annual"] = renegotiate_savings
 
         logger.info(f"[Decision Agent] action={rec} confidence={decision_output.get('confidence')}")
-        decision_output["embedding"] = embedding
         return {**state, "decision_output": decision_output}
 
     except Exception as e:
