@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import StatusBadge from "@/components/ui/StatusBadge";
 import EmptyState from "@/components/ui/EmptyState";
 import { Send, FileText, Loader2, Eye } from "lucide-react";
+import Button from "@/components/ui/Button";
 
 function SkeletonBlock({ h = 56 }) {
   return <div className="skeleton" style={{ height: h, borderRadius: 6 }} />;
@@ -69,7 +70,7 @@ export default function ActionsPage() {
             actions.map((a) => {
               const isSelected = selected?.id === a.id;
               return (
-                <button
+                <Button
                   key={a.id}
                   onClick={() => setSelected(a)}
                   className="w-full text-left px-4 py-3.5 relative transition-colors"
@@ -108,7 +109,7 @@ export default function ActionsPage() {
                       via {a.mcp_server_used}
                     </p>
                   )}
-                </button>
+                </Button>
               );
             })
           )}
@@ -216,7 +217,7 @@ export default function ActionsPage() {
                 <p className="text-sm mb-4" style={{ color: "var(--text-tertiary)" }}>
                   This action will be sent via the configured MCP server. Requires the linked decision to be approved.
                 </p>
-                <button
+                <Button
                   onClick={() => handleSend(selected.id)}
                   disabled={!!sending}
                   className="btn btn-primary btn-lg"
@@ -226,7 +227,7 @@ export default function ActionsPage() {
                     : <Send size={14} />
                   }
                   {sending === selected.id ? "Sending…" : "Send Now"}
-                </button>
+                </Button>
               </div>
             )}
 

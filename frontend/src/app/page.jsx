@@ -10,6 +10,7 @@ import {
   ArrowRight, ShieldCheck, Zap, AlertCircle, Activity
 } from "lucide-react";
 import {
+import Button from "@/components/ui/Button";
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, BarChart, Bar
 } from "recharts";
@@ -113,14 +114,14 @@ export default function DashboardPage() {
             Real-time contract intelligence and exposure tracking
           </p>
         </div>
-        <button
+        <Button
           onClick={() => load(true)}
           disabled={loading}
           className="btn btn-secondary"
         >
           <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           Refresh
-        </button>
+        </Button>
       </div>
 
       {/* Error */}

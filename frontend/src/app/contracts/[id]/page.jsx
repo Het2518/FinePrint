@@ -14,6 +14,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import CurrencyValue from "@/components/ui/CurrencyValue";
 import LiveScanMonitor from "@/app/contracts/components/LiveScanMonitor";
 import {
+import Button from "@/components/ui/Button";
   ArrowLeft, ScanLine, Loader2, FileText, RotateCcw,
   Calendar, DollarSign, RefreshCw, AlertTriangle, Cpu,
   CheckCircle2, Clock, Building2, Zap, Users } from
@@ -168,13 +169,13 @@ export default function ContractDetailPage() {
           title="Contract not found"
           description="This contract may have been deleted or you may not have access."
           action={
-          <button
+          <Button
             onClick={() => router.push("/contracts")}
             className="text-sm font-medium"
             style={{ color: "var(--accent)" }}>
             
               Back to Contracts
-            </button>
+            </Button>
           } />
         
       </div>);
@@ -227,7 +228,7 @@ export default function ContractDetailPage() {
 
       {/* Back nav */}
       <div className="px-6 lg:px-8 pt-6 pb-0">
-        <button
+        <Button
           onClick={() => router.back()}
           className="flex items-center gap-1.5 text-sm mb-5 transition-colors"
           style={{ color: "var(--text-tertiary)" }}
@@ -236,7 +237,7 @@ export default function ContractDetailPage() {
           
           <ArrowLeft size={14} />
           Contracts
-        </button>
+        </Button>
 
         {/* Header */}
         <div className="flex items-start justify-between mb-6">
@@ -254,15 +255,15 @@ export default function ContractDetailPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
+            <Button
               onClick={() => load(true)}
               className="p-2 rounded-md transition-colors"
               style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }}
               title="Refresh">
               
               <RefreshCw size={14} />
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={triggerScan}
               disabled={scanning || contract.status === "scanning"}
               className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-40"
@@ -274,7 +275,7 @@ export default function ContractDetailPage() {
               <ScanLine size={14} />
               }
               {scanning || contract.status === "scanning" ? "Scanning…" : "Run AI Scan"}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -286,7 +287,7 @@ export default function ContractDetailPage() {
           {tabs.map((t) => {
             const active = activeTab === t.key;
             return (
-              <button
+              <Button
                 key={t.key}
                 onClick={() => setActiveTab(t.key)}
                 className="px-4 py-2.5 text-sm font-medium transition-colors relative"
@@ -306,7 +307,7 @@ export default function ContractDetailPage() {
                     {t.count}
                   </span>
                 }
-              </button>);
+              </Button>);
 
           })}
         </div>

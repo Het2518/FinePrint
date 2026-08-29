@@ -6,6 +6,7 @@ import {
   Send, Sparkles, Bot, User, Loader2 } from
 "lucide-react";
 import ReactMarkdown from "react-markdown";
+import Button from "@/components/ui/Button";
 
 
 
@@ -198,13 +199,13 @@ export default function ChatPage() {
             </p>
             <div className="flex flex-wrap gap-2.5">
               {SUGGESTED_QUESTIONS.map((q) =>
-            <button
+            <Button
               key={q}
               onClick={() => sendMessage(q)}
               className="text-sm px-4 py-2.5 rounded-lg transition-colors font-medium bg-white border border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-700 hover:bg-blue-50 shadow-sm text-left">
               
                   {q}
-                </button>
+                </Button>
             )}
             </div>
           </div>
@@ -232,7 +233,7 @@ export default function ChatPage() {
                 maxHeight: "160px"
               }} />
             
-            <button
+            <Button
               onClick={() => sendMessage()}
               disabled={!input.trim() || loading}
               className={`p-2.5 rounded-lg transition-all flex items-center justify-center ${
@@ -242,7 +243,7 @@ export default function ChatPage() {
               }>
               
               <Send size={18} className={input.trim() && !loading ? "translate-x-0.5" : ""} />
-            </button>
+            </Button>
           </div>
           <p className="text-xs font-medium text-center mt-3 text-slate-400">
             Press Enter to send · Shift+Enter for new line · Powered by Groq + ChromaDB RAG

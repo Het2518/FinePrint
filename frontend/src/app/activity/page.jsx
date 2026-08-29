@@ -5,6 +5,8 @@ import { api } from "@/lib/api";
 import EmptyState from "@/components/ui/EmptyState";
 import TimelineEvent from "@/app/contracts/components/TimelineEvent";
 import { Clock, Search, Cpu, User as UserIcon, X } from "lucide-react";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
 
 function SkeletonBlock({ h = 56 }) {
   return <div className="skeleton" style={{ height: h, borderRadius: 6 }} />;
@@ -79,7 +81,7 @@ export default function ActivityPage() {
           }}
         >
           <Search size={13} style={{ color: "var(--text-tertiary)", flexShrink: 0 }} />
-          <input
+          <Input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -95,12 +97,12 @@ export default function ActivityPage() {
             }}
           />
           {search && (
-            <button
+            <Button
               onClick={() => setSearch("")}
               style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-tertiary)", padding: 0, display: "flex" }}
             >
               <X size={12} />
-            </button>
+            </Button>
           )}
         </div>
 
@@ -113,7 +115,7 @@ export default function ActivityPage() {
           }}
         >
           {actorButtons.map(({ key, label, icon }) => (
-            <button
+            <Button
               key={key}
               onClick={() => setActorFilter(key)}
               className="flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-all"
@@ -124,7 +126,7 @@ export default function ActivityPage() {
               }}
             >
               {icon}{label}
-            </button>
+            </Button>
           ))}
         </div>
 

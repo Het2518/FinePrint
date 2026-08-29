@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import Link from "next/link";
 import { AlertTriangle, Clock, CheckCircle2, Calendar, RefreshCw, TrendingUp, DollarSign } from "lucide-react";
+import Button from "@/components/ui/Button";
 
 const BUCKET_CONFIG = {
   expired:  { label: "Expired",        accentColor: "var(--text-disabled)",      badgeClass: "badge-neutral",  icon: Clock },
@@ -130,10 +131,10 @@ export default function RenewalsPage() {
               : "Contract renewal timeline"}
           </p>
         </div>
-        <button onClick={load} className="btn btn-secondary btn-sm">
+        <Button onClick={load} variant="secondary" size="sm">
           <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
           Refresh
-        </button>
+        </Button>
       </div>
 
       {/* KPI row */}

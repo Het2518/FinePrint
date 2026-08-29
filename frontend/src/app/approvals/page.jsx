@@ -10,6 +10,7 @@ import CurrencyValue from "@/components/ui/CurrencyValue";
 import EmptyState from "@/components/ui/EmptyState";
 import Link from "next/link";
 import {
+import Button from "@/components/ui/Button";
   Bell, CheckCircle2, XCircle, FileText, Users,
   AlertTriangle, Cpu, Zap, Clock,
 } from "lucide-react";
@@ -80,7 +81,7 @@ export default function ApprovalsPage() {
           style={{ borderBottom: "1px solid var(--border-subtle)" }}
         >
           {tabs.map((t) => (
-            <button
+            <Button
               key={t.key}
               onClick={() => setFilterTab(t.key)}
               className="flex-1 py-1.5 rounded-md text-xs font-medium transition-all"
@@ -91,7 +92,7 @@ export default function ApprovalsPage() {
               }}
             >
               {t.label}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -107,7 +108,7 @@ export default function ApprovalsPage() {
             decisions.map((d) => {
               const isSelected = selected?.id === d.id;
               return (
-                <button
+                <Button
                   key={d.id}
                   onClick={() => setSelected(d)}
                   className="w-full text-left px-4 py-3.5 relative transition-colors"
@@ -164,7 +165,7 @@ export default function ApprovalsPage() {
                       <Users size={10} /> 2nd Approver Required
                     </div>
                   )}
-                </button>
+                </Button>
               );
             })
           )}
@@ -441,22 +442,22 @@ export default function ApprovalsPage() {
                     </div>
                   )}
                   <div className="flex gap-3 mb-4">
-                    <button
+                    <Button
                       onClick={() => handleApprove(selected.id)}
                       disabled={!!actionLoading}
                       className="btn btn-success btn-lg flex-1"
                     >
                       <CheckCircle2 size={15} />
                       {actionLoading === "approve" ? "Approving…" : "Approve"}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => handleReject(selected.id)}
                       disabled={!!actionLoading}
                       className="btn btn-destructive btn-lg flex-1"
                     >
                       <XCircle size={15} />
                       {actionLoading === "reject" ? "Rejecting…" : "Reject"}
-                    </button>
+                    </Button>
                   </div>
                   <Link
                     href={`/contracts/${selected.contract_id}`}

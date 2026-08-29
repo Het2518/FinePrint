@@ -5,6 +5,8 @@ import { api } from "@/lib/api";
 import { Building2, RefreshCw, ChevronRight, Calendar, Search, X } from "lucide-react";
 import Link from "next/link";
 import RiskBadge from "@/components/ui/RiskBadge";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
 
 function SkeletonRow() {
   return <div className="skeleton" style={{ height: 52, borderRadius: 6 }} />;
@@ -58,7 +60,7 @@ export default function VendorsPage() {
             }}
           >
             <Search size={13} style={{ color: "var(--text-tertiary)", flexShrink: 0 }} />
-            <input
+            <Input
               type="text"
               placeholder="Search vendors…"
               value={search}
@@ -74,17 +76,17 @@ export default function VendorsPage() {
               }}
             />
             {search && (
-              <button
+              <Button
                 onClick={() => setSearch("")}
                 style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-tertiary)", padding: 0, display: "flex" }}
               >
                 <X size={12} />
-              </button>
+              </Button>
             )}
           </div>
-          <button onClick={load} className="btn btn-secondary btn-sm btn-icon" title="Refresh">
+          <Button onClick={load} variant="secondary" size="sm" title="Refresh">
             <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
-          </button>
+          </Button>
         </div>
       </div>
 

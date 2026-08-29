@@ -12,6 +12,10 @@ import {
   ChevronRight, RotateCcw, X, Mail, HardDrive, Globe, Download,
 } from "lucide-react";
 import LiveScanMonitor from "@/app/contracts/components/LiveScanMonitor";
+import Button from "@/components/ui/Button";
+import Select from "@/components/ui/Select";
+import SearchInput from "@/components/ui/Search";
+import Input from "@/components/ui/Input";
 
 const SOURCE_ICONS = {
   gmail:         <Mail size={12} />,
@@ -165,13 +169,13 @@ export default function ContractsPage() {
         <div className="flex items-center gap-2">
           {/* Export */}
           <div className="relative" ref={exportRef}>
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => setShowExport(!showExport)}
-              className="btn btn-secondary btn-sm btn-icon"
               title="Export"
-            >
-              <Download size={13} />
-            </button>
+              icon={<Download size={13} />}
+            />
             {showExport && (
               <div
                 className="absolute right-0 top-full mt-1.5 w-52 rounded-lg overflow-hidden animate-slide-down"
@@ -186,7 +190,7 @@ export default function ContractsPage() {
                   { label: "Export Contracts (CSV)", action: () => window.open(api.exportContractsUrl(), "_blank") },
                   { label: "Export Decisions (CSV)", action: () => window.open(api.exportDecisionsUrl(), "_blank") },
                 ].map(({ label, action }) => (
-                  <button
+                  <Button
                     key={label}
                     onClick={() => { action(); setShowExport(false); }}
                     className="w-full text-left px-4 py-2.5 text-sm transition-colors"
@@ -195,30 +199,32 @@ export default function ContractsPage() {
                     onMouseLeave={(e) => { e.currentTarget.style.background = ""; e.currentTarget.style.color = "var(--text-secondary)"; }}
                   >
                     {label}
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}
           </div>
 
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => load(true)}
             disabled={loading}
-            className="btn btn-secondary btn-sm btn-icon"
             title="Refresh"
-          >
-            <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
-          </button>
+            icon={<RefreshCw size={13} className={loading ? "animate-spin" : ""} />}
+          />
 
-          <button
+          <Button
+            variant="primary"
+            size="sm"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="btn btn-primary btn-sm"
+            loading={uploading}
+            icon={<Upload size={13} />}
           >
-            {uploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
             {uploading ? "Uploading…" : "Upload Contract"}
-          </button>
-          <input ref={fileInputRef} type="file" accept=".pdf,.docx,.txt" onChange={handleUpload} className="hidden" />
+          </Button>
+          <Input ref={fileInputRef} type="file" accept=".pdf,.docx,.txt" onChange={handleUpload} className="hidden" />
         </div>
       </div>
 
@@ -230,74 +236,50 @@ export default function ContractsPage() {
           border: "1px solid var(--border-subtle)",
         }}
       >
-        {/* Search */}
-        <div
-          className="flex items-center gap-2 flex-1 min-w-48 px-3 rounded-md transition-all"
-          style={{
-            height: 34,
-            background: "var(--bg-surface-raised)",
-            border: "1px solid var(--border-subtle)",
-          }}
-        >
-          <Search size={13} style={{ color: "var(--text-tertiary)", flexShrink: 0 }} />
-          <input
-            type="text"
+        <div className="flex-1 min-w-64">
+          <SearchInput
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            onClear={() => setSearch("")}
             placeholder="Search contracts…"
-            style={{
-              flex: 1,
-              background: "transparent",
-              border: "none",
-              outline: "none",
-              fontSize: 13,
-              color: "var(--text-primary)",
-              fontFamily: "var(--font-sans)",
-            }}
           />
-          {search && (
-            <button
-              onClick={() => setSearch("")}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-tertiary)", padding: 0, display: "flex" }}
-            >
-              <X size={13} />
-            </button>
-          )}
         </div>
 
-        <select
-          value={riskFilter}
-          onChange={(e) => setRiskFilter(e.target.value)}
-          className="input-field"
-          style={{ width: "auto", minWidth: 140 }}
-        >
-          <option value="">All Risk Levels</option>
-          <option value="high">High Risk</option>
-          <option value="medium">Medium Risk</option>
-          <option value="low">Low Risk</option>
-        </select>
+        <div className="w-40">
+          <Select
+            value={riskFilter}
+            onChange={(e) => setRiskFilter(e.target.value)}
+          >
+            <option value="">All Risk Levels</option>
+            <option value="high">High Risk</option>
+            <option value="medium">Medium Risk</option>
+            <option value="low">Low Risk</option>
+          </Select>
+        </div>
 
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="input-field"
-          style={{ width: "auto", minWidth: 140 }}
-        >
-          <option value="">All Statuses</option>
-          <option value="active">Active</option>
-          <option value="scanning">Scanning</option>
-          <option value="manual_review">Manual Review</option>
-          <option value="parse_failed">Parse Failed</option>
-          <option value="archived">Archived</option>
-        </select>
+        <div className="w-40">
+          <Select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="scanning">Scanning</option>
+            <option value="manual_review">Manual Review</option>
+            <option value="parse_failed">Parse Failed</option>
+            <option value="archived">Archived</option>
+          </Select>
+        </div>
 
         {hasActiveFilters && (
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => { setRiskFilter(""); setStatusFilter(""); }}
-            className="btn btn-ghost btn-sm"
+            icon={<X size={12} />}
           >
-            <X size={12} /> Clear filters
-          </button>
+            Clear filters
+          </Button>
         )}
       </div>
 
@@ -337,9 +319,9 @@ export default function ContractsPage() {
             title={hasActiveFilters || search ? "No contracts match your filters" : "No contracts yet"}
             description={hasActiveFilters || search ? "Try adjusting your search or filters." : "Upload your first contract to begin AI risk analysis."}
             action={!hasActiveFilters && !search ? (
-              <button onClick={() => fileInputRef.current?.click()} className="btn btn-primary btn-sm">
-                <Upload size={13} /> Upload Contract
-              </button>
+              <Button variant="primary" size="sm" onClick={() => fileInputRef.current?.click()} icon={<Upload size={13} />}>
+                Upload Contract
+              </Button>
             ) : undefined}
           />
         ) : (
@@ -427,17 +409,14 @@ export default function ContractsPage() {
                       }
                     }}
                   >
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={(e) => { e.preventDefault(); triggerScan(c.id); }}
                       disabled={isScanning}
-                      className="btn btn-ghost btn-icon btn-sm"
                       title="Run AI Scan"
-                    >
-                      {isScanning
-                        ? <Loader2 size={13} className="animate-spin" />
-                        : <ScanLine size={13} style={{ color: "var(--text-tertiary)" }} />
-                      }
-                    </button>
+                      icon={isScanning ? <Loader2 size={13} className="animate-spin" /> : <ScanLine size={13} style={{ color: "var(--text-tertiary)" }} />}
+                    />
                     <Link href={`/contracts/${c.id}`} className="btn btn-ghost btn-icon btn-sm" title="View details">
                       <ChevronRight size={13} style={{ color: "var(--text-tertiary)" }} />
                     </Link>

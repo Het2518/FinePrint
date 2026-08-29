@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { Users, Plus, Trash2, Shield, Eye, UserCheck, X, AlertTriangle, Loader2 } from "lucide-react";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import Select from "@/components/ui/Select";
 
 const ROLE_CONFIG = {
   admin:  { label: "Admin",  icon: Shield,     color: "var(--status-danger)" },
@@ -75,12 +78,12 @@ export default function TeamPage() {
           </p>
         </div>
         {isAdmin && (
-          <button
+          <Button
             onClick={() => { setShowInvite(true); setInviteResult(null); }}
             className="btn btn-primary btn-sm"
           >
             <Plus size={13} /> Invite Member
-          </button>
+          </Button>
         )}
       </div>
 
@@ -89,29 +92,29 @@ export default function TeamPage() {
         <div className="surface-card p-5 mb-5 animate-slide-down">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Invite New Member</h2>
-            <button
+            <Button
               onClick={() => setShowInvite(false)}
               className="btn btn-ghost btn-icon btn-sm"
             >
               <X size={14} style={{ color: "var(--text-tertiary)" }} />
-            </button>
+            </Button>
           </div>
 
           <div className="grid grid-cols-2 gap-3 mb-3">
-            <input
+            <Input
               placeholder="Email address"
               type="email"
               value={inviteForm.email}
               onChange={(e) => setInviteForm((f) => ({ ...f, email: e.target.value }))}
               className="input-field col-span-2"
             />
-            <input
+            <Input
               placeholder="Full name (optional)"
               value={inviteForm.full_name}
               onChange={(e) => setInviteForm((f) => ({ ...f, full_name: e.target.value }))}
               className="input-field"
             />
-            <select
+            <Select
               value={inviteForm.role}
               onChange={(e) => setInviteForm((f) => ({ ...f, role: e.target.value }))}
               className="input-field"
@@ -119,7 +122,7 @@ export default function TeamPage() {
               <option value="admin">Admin</option>
               <option value="user">Member</option>
               <option value="viewer">Viewer</option>
-            </select>
+            </Select>
           </div>
 
           {inviteResult && (
@@ -151,14 +154,13 @@ export default function TeamPage() {
             </div>
           )}
 
-          <button
-            onClick={handleInvite}
+          <Button onClick={handleInvite}
             disabled={!inviteForm.email || inviteLoading}
-            className="btn btn-primary btn-sm"
+            variant="primary" size="sm"
           >
             {inviteLoading ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
             {inviteLoading ? "Inviting…" : "Send Invite"}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -256,7 +258,7 @@ export default function TeamPage() {
                     <div className="flex items-center justify-end gap-2">
                       {!isMe ? (
                         <>
-                          <select
+                          <Select
                             value={m.role}
                             onChange={(e) => handleRoleChange(m.id, e.target.value)}
                             disabled={actionLoading === m.id}
@@ -266,8 +268,8 @@ export default function TeamPage() {
                             <option value="admin">Admin</option>
                             <option value="user">Member</option>
                             <option value="viewer">Viewer</option>
-                          </select>
-                          <button
+                          </Select>
+                          <Button
                             onClick={() => handleRemove(m.id)}
                             disabled={actionLoading === m.id}
                             className="btn btn-ghost btn-icon btn-sm"
@@ -280,7 +282,7 @@ export default function TeamPage() {
                               ? <Loader2 size={13} className="animate-spin" />
                               : <Trash2 size={13} />
                             }
-                          </button>
+                          </Button>
                         </>
                       ) : (
                         <span className="text-xs" style={{ color: "var(--text-disabled)" }}>—</span>

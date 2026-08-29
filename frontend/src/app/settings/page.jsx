@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { Trash2, Loader2, Save, CheckCircle2, DollarSign, Sliders, Link as LinkIcon, Plus } from "lucide-react";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
 
 const MCP_SERVERS = [
   { type: "google_drive", name: "Google Drive", description: "Read contracts from shared Drive folders" },
@@ -118,7 +120,7 @@ export default function SettingsPage() {
         <div style={{ width: 180, flexShrink: 0 }}>
           <nav className="space-y-0.5">
             {tabs.map((t) => (
-              <button
+              <Button
                 key={t.key}
                 onClick={() => setActiveTab(t.key)}
                 className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium text-left transition-all"
@@ -144,7 +146,7 @@ export default function SettingsPage() {
                   {t.icon}
                 </span>
                 {t.label}
-              </button>
+              </Button>
             ))}
           </nav>
         </div>
@@ -176,7 +178,7 @@ export default function SettingsPage() {
                     </p>
                     <div className="flex items-center gap-2.5">
                       <span className="text-sm font-medium" style={{ color: "var(--text-tertiary)" }}>$</span>
-                      <input
+                      <Input
                         type="number"
                         value={approvalThreshold}
                         onChange={(e) => setApprovalThreshold(e.target.value)}
@@ -196,7 +198,7 @@ export default function SettingsPage() {
                     </p>
                     <div className="flex items-center gap-2.5">
                       <span className="text-sm font-medium" style={{ color: "var(--text-tertiary)" }}>$</span>
-                      <input
+                      <Input
                         type="number"
                         value={secondThreshold}
                         onChange={(e) => setSecondThreshold(e.target.value)}
@@ -239,14 +241,13 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <button
-                  onClick={saveSettings}
+                <Button onClick={saveSettings}
                   disabled={saving}
-                  className="btn btn-primary btn-lg"
+                  variant="primary" size="lg"
                 >
                   {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <CheckCircle2 size={14} /> : <Save size={14} />}
                   {saved ? "Saved" : saving ? "Saving…" : "Save Policy Rules"}
-                </button>
+                </Button>
               </div>
             </>
           )}
@@ -274,14 +275,14 @@ export default function SettingsPage() {
                         </p>
                       </div>
                       {isConnected && (
-                        <button
+                        <Button
                           onClick={() => disconnectMcp(server.type)}
                           disabled={isLoading}
                           className="btn btn-destructive btn-sm"
                         >
                           {isLoading ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
                           Disconnect
-                        </button>
+                        </Button>
                       )}
                     </div>
 
@@ -293,7 +294,7 @@ export default function SettingsPage() {
 
                     {!isConnected && (
                       <div className="flex gap-2.5 mt-4">
-                        <input
+                        <Input
                           type="text"
                           value={mcpUrls[server.type] ?? ""}
                           onChange={(e) => setMcpUrls((prev) => ({ ...prev, [server.type]: e.target.value }))}
@@ -301,14 +302,14 @@ export default function SettingsPage() {
                           className="input-field font-mono flex-1"
                           style={{ fontSize: 12 }}
                         />
-                        <button
+                        <Button
                           onClick={() => connectMcp(server.type)}
                           disabled={isLoading || !mcpUrls[server.type]}
                           className="btn btn-primary btn-sm"
                         >
                           {isLoading ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
                           Connect
-                        </button>
+                        </Button>
                       </div>
                     )}
 
@@ -361,7 +362,7 @@ export default function SettingsPage() {
                   </label>
                   <div className="flex gap-2">
                     {["USD", "INR"].map((c) => (
-                      <button
+                      <Button
                         key={c}
                         onClick={() => setDisplayCurrency(c)}
                         className="btn btn-lg"
@@ -373,20 +374,19 @@ export default function SettingsPage() {
                         }}
                       >
                         {c === "USD" ? "$ USD" : "₹ INR"}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
               </div>
               <div>
-                <button
-                  onClick={saveSettings}
+                <Button onClick={saveSettings}
                   disabled={saving}
-                  className="btn btn-primary btn-lg"
+                  variant="primary" size="lg"
                 >
                   {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <CheckCircle2 size={14} /> : <Save size={14} />}
                   {saved ? "Saved" : saving ? "Saving…" : "Save Preferences"}
-                </button>
+                </Button>
               </div>
             </>
           )}

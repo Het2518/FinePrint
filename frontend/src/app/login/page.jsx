@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Shield, Mail, Lock, User, Building2, Loader2, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { api } from "@/lib/api";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -92,7 +94,7 @@ export default function LoginPage() {
             }}
           >
             {["login", "register"].map((m) => (
-              <button
+              <Button
                 key={m}
                 onClick={() => { setMode(m); setError(null); }}
                 className="flex-1 py-2 rounded-md text-sm font-medium transition-all"
@@ -104,7 +106,7 @@ export default function LoginPage() {
                 }}
               >
                 {m === "login" ? "Sign In" : "Register"}
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -124,12 +126,11 @@ export default function LoginPage() {
                       className="absolute left-3 top-1/2 -translate-y-1/2"
                       style={{ color: "var(--text-disabled)" }}
                     />
-                    <input
-                      required
+                    <Input required
                       value={form.org_name}
                       onChange={set("org_name")}
                       placeholder="Acme Corp"
-                      className="input-field"
+                      
                       style={{ paddingLeft: 34 }}
                     />
                   </div>
@@ -147,11 +148,10 @@ export default function LoginPage() {
                       className="absolute left-3 top-1/2 -translate-y-1/2"
                       style={{ color: "var(--text-disabled)" }}
                     />
-                    <input
-                      value={form.full_name}
+                    <Input value={form.full_name}
                       onChange={set("full_name")}
                       placeholder="Jane Smith"
-                      className="input-field"
+                      
                       style={{ paddingLeft: 34 }}
                     />
                   </div>
@@ -172,13 +172,12 @@ export default function LoginPage() {
                   className="absolute left-3 top-1/2 -translate-y-1/2"
                   style={{ color: "var(--text-disabled)" }}
                 />
-                <input
-                  required
+                <Input required
                   type="email"
                   value={form.email}
                   onChange={set("email")}
                   placeholder="you@company.com"
-                  className="input-field"
+                  
                   style={{ paddingLeft: 34 }}
                 />
               </div>
@@ -197,16 +196,15 @@ export default function LoginPage() {
                   className="absolute left-3 top-1/2 -translate-y-1/2"
                   style={{ color: "var(--text-disabled)" }}
                 />
-                <input
-                  required
+                <Input required
                   type={showPass ? "text" : "password"}
                   value={form.password}
                   onChange={set("password")}
                   placeholder="••••••••"
-                  className="input-field"
+                  
                   style={{ paddingLeft: 34, paddingRight: 36 }}
                 />
-                <button
+                <Button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
                   className="absolute right-3 top-1/2 -translate-y-1/2"
@@ -220,7 +218,7 @@ export default function LoginPage() {
                   }}
                 >
                   {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -238,10 +236,9 @@ export default function LoginPage() {
               </div>
             )}
 
-            <button
-              type="submit"
+            <Button type="submit"
               disabled={loading}
-              className="btn btn-primary btn-lg w-full mt-2"
+              variant="primary" size="lg"
               style={{ width: "100%", height: 40, marginTop: 8 }}
             >
               {loading && <Loader2 size={14} className="animate-spin" />}
@@ -250,7 +247,7 @@ export default function LoginPage() {
                 : mode === "login"
                 ? "Sign In"
                 : "Create Account"}
-            </button>
+            </Button>
           </form>
 
           {/* Demo credentials */}
@@ -262,7 +259,7 @@ export default function LoginPage() {
               Demo credentials
             </p>
             <div className="flex gap-4">
-              <button
+              <Button
                 type="button"
                 onClick={() => {
                   setForm({ org_name: "Demo Corp", full_name: "Admin", email: "admin@demo.com", password: "secret123" });
@@ -273,9 +270,9 @@ export default function LoginPage() {
                 style={{ color: "var(--accent)", background: "none", border: "none", cursor: "pointer" }}
               >
                 Demo Login
-              </button>
+              </Button>
               <span style={{ color: "var(--border-default)" }}>·</span>
-              <button
+              <Button
                 type="button"
                 onClick={() => {
                   setForm({ org_name: "Demo Corp", full_name: "Admin", email: "admin@demo.com", password: "secret123" });
@@ -286,7 +283,7 @@ export default function LoginPage() {
                 style={{ color: "var(--text-tertiary)", background: "none", border: "none", cursor: "pointer" }}
               >
                 Demo Register
-              </button>
+              </Button>
             </div>
           </div>
         </div>
