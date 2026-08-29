@@ -7,13 +7,16 @@ LLM generates the NARRATIVE. Deterministic Finance numbers override LLM savings 
 import json
 import re
 import logging
-from groq import Groq
+
+from langchain_groq import ChatGroq
+from langchain_core.messages import SystemMessage, HumanMessage
+
 from app.config import settings
 from app.orchestrator.state import ContractScanState
 
 logger = logging.getLogger(__name__)
-groq_client = Groq(api_key=settings.groq_api_key)
 
+llm = ChatGroq(api_key=settings.groq_api_key, model_name=settings.groq_model, temperature=0.1, max_tokens=768)
 
 def _extract_json(raw: str) -> str:
     """Strip Qwen think-blocks, markdown fences, extract first JSON object."""
@@ -23,13 +26,18 @@ def _extract_json(raw: str) -> str:
     return match.group(0) if match else raw
 
 
-import hashlib
+from sentence_transformers import SentenceTransformer
+
+# Load embedding model globally so it's cached in memory
+_embedder = SentenceTransformer("all-MiniLM-L6-v2")
+
 def _generate_embedding(text: str) -> list[float]:
-    """Mock 1536-dimensional embedding based on text hash. Replace with LLM API call."""
-    h = hashlib.sha256(text.encode()).digest()
-    # create 1536 floats from the 32 bytes
-    vec = [(b / 255.0) for b in h] * 48
-    return vec
+    """Real semantic embedding using SentenceTransformer (padded to 1536-dim)."""
+    # Generate 384-dim vector
+    vec = _embedder.encode(text).tolist()
+    # Repeat 4 times to fill the 1536-dim Vector column without breaking schema
+    # (Mathematically preserves relative euclidean distances)
+    return vec * 4
 
 
 DECISION_SYSTEM_PROMPT = """You are a SaaS procurement advisor.
@@ -97,22 +105,17 @@ def run_decision_agent(state: ContractScanState) -> ContractScanState:
             db.close()
 
     try:
-        response = groq_client.chat.completions.create(
-            model=settings.groq_model,
-            messages=[
-                {"role": "system", "content": DECISION_SYSTEM_PROMPT},
-                {"role": "user", "content": DECISION_USER_PROMPT_TEMPLATE.format(
-                    clauses_json=json.dumps(clauses, indent=2),
-                    risk_json=json.dumps(risk_output, indent=2),
-                    finance_json=json.dumps(finance_output, indent=2),
-                    historical_outcomes=historical_outcomes_str,
-                )},
-            ],
-            temperature=0.1,
-            max_tokens=768,
-        )
+        response = llm.invoke([
+            SystemMessage(content=DECISION_SYSTEM_PROMPT),
+            HumanMessage(content=DECISION_USER_PROMPT_TEMPLATE.format(
+                clauses_json=json.dumps(clauses, indent=2),
+                risk_json=json.dumps(risk_output, indent=2),
+                finance_json=json.dumps(finance_output, indent=2),
+                historical_outcomes=historical_outcomes_str,
+            ))
+        ])
 
-        raw = response.choices[0].message.content or ""
+        raw = response.content or ""
         logger.debug(f"[Decision Agent] Raw output: {raw[:400]}")
         decision_output = json.loads(_extract_json(raw))
 

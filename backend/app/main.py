@@ -10,28 +10,38 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.verification.verifier import run_daily_verification
-from app.ingestion.scheduler import start_ingestion_scheduler
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.jobstores.redis import RedisJobStore
 
-def start_verification_scheduler():
-    """Simple background scheduler for the verifier job (MVP)."""
-    from app.jobs.retention import run_retention_cleanup
-    def _run():
-        while True:
-            run_daily_verification()
-            run_retention_cleanup()
-            time.sleep(86400) # Wait 24 hours
-    
-    t = threading.Thread(target=_run, daemon=True)
-    t.start()
+def get_scheduler() -> BackgroundScheduler:
+    jobstores = {
+        "default": RedisJobStore(
+            jobs_key="fineprint_jobs",
+            run_times_key="fineprint_running",
+            url=settings.redis_url
+        )
+    }
+    scheduler = BackgroundScheduler(jobstores=jobstores)
+    return scheduler
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    start_verification_scheduler()
-    start_ingestion_scheduler()
+    scheduler = get_scheduler()
+    
+    # Add jobs if they don't already exist in Redis
+    from app.ingestion.scheduler import run_ingestion_job
+    scheduler.add_job(run_ingestion_job, "interval", minutes=1, id="ingestion_job", replace_existing=True)
+    
+    from app.jobs.retention import run_retention_cleanup
+    scheduler.add_job(run_retention_cleanup, "interval", hours=24, id="retention_job", replace_existing=True)
+    
+    scheduler.add_job(run_daily_verification, "interval", hours=24, id="verification_job", replace_existing=True)
+    
+    scheduler.start()
     yield
     # Shutdown
-    pass
+    scheduler.shutdown()
 
 app = FastAPI(
     title="FinePrint API",

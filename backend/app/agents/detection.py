@@ -9,14 +9,15 @@ import json
 import re
 import logging
 
-from groq import Groq
+from langchain_groq import ChatGroq
+from langchain_core.messages import SystemMessage, HumanMessage
 
 from app.config import settings
 from app.orchestrator.state import ContractScanState
 
 logger = logging.getLogger(__name__)
 
-groq_client = Groq(api_key=settings.groq_api_key)
+llm = ChatGroq(api_key=settings.groq_api_key, model_name=settings.groq_model, temperature=0.0, max_tokens=1024)
 
 DETECTION_SYSTEM_PROMPT = """You are a contract clause extraction specialist.
 Extract ONLY what is explicitly stated in the contract text below.
@@ -52,17 +53,12 @@ def run_detection_agent(state: ContractScanState) -> ContractScanState:
     truncated = raw_text[:6000] if len(raw_text) > 6000 else raw_text
 
     try:
-        response = groq_client.chat.completions.create(
-            model=settings.groq_model,
-            messages=[
-                {"role": "system", "content": DETECTION_SYSTEM_PROMPT},
-                {"role": "user", "content": DETECTION_USER_PROMPT_TEMPLATE.format(raw_text=truncated)},
-            ],
-            temperature=0.0,
-            max_tokens=1024,
-        )
+        response = llm.invoke([
+            SystemMessage(content=DETECTION_SYSTEM_PROMPT),
+            HumanMessage(content=DETECTION_USER_PROMPT_TEMPLATE.format(raw_text=truncated))
+        ])
 
-        raw_output = response.choices[0].message.content or ""
+        raw_output = response.content or ""
         logger.debug(f"[Detection Agent] Raw LLM output: {raw_output[:400]}")
         cleaned = _extract_json(raw_output)
         clauses = json.loads(cleaned)

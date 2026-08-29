@@ -120,15 +120,18 @@ def build_graph() -> StateGraph:
         route_after_detection,
         {
             "manual_review": "manual_review",
-            "continue": "fetch_usage_signals",
+            "continue": ["fetch_usage_signals", "finance_agent"], # PARALLEL FAN-OUT
         },
     )
     graph.add_edge("manual_review", END)
 
-    # Sequential: fetch → risk → finance → decision (no parallel fan-out)
+    # Parallel branches
     graph.add_edge("fetch_usage_signals", "risk_agent")
-    graph.add_edge("risk_agent", "finance_agent")
+    
+    # FAN-IN to Decision agent
+    graph.add_edge("risk_agent", "decision_agent")
     graph.add_edge("finance_agent", "decision_agent")
+    
     graph.add_edge("decision_agent", "rule_check")
 
     # Rule check → approval or auto-log
