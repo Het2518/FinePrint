@@ -91,6 +91,15 @@ def run_daily_verification():
                     
                     db.add(new_outcome)
                     verified_count += 1
+                    
+                    # RAG loop: store the verified outcome in ChromaDB for future decisions (FR-DEC-4)
+                    try:
+                        from app.agents.decision import _store_decision_in_chroma
+                        risk_type = decision.risk_level.value if decision.risk_level else "unknown"
+                        action_str = decision.recommended_action.value if decision.recommended_action else "unknown"
+                        _store_decision_in_chroma(str(decision.id), clause.vendor_name, risk_type, action_str, actual_outcome)
+                    except Exception as store_e:
+                        logger.warning(f"[Verifier] Failed to store outcome in ChromaDB: {store_e}")
             except Exception as e:
                 logger.error(f"[Verifier] Failed MCP call for {clause.vendor_name}: {e}")
 

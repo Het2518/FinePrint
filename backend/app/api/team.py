@@ -87,7 +87,8 @@ def invite_user(
         "email": new_user.email,
         "full_name": new_user.full_name,
         "role": new_user.role.value,
-        "temp_password": temp_password,  # Show once — in prod, send via email
+        "temp_password": temp_password,
+        "WARNING_NOT_PRODUCTION": "Returning passwords in API responses is insecure. Wire up an email service (e.g. SendGrid) for production.",
         "message": "User created. Share the temporary password securely.",
     }
 

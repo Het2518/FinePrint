@@ -102,29 +102,12 @@ def approve_decision(
 
     db.commit()
 
-    # ── AUTO-SEND: Fire actions immediately without drafting (no human review of wording) ──
-    vendor = decision.situation.split()[0] if decision.situation else "vendor"
-    action_label = decision.recommended_action.value if decision.recommended_action else "action"
+    # Trigger action drafting (human review)
+    _generate_action_draft(decision, db)
 
-    # Send action email immediately
-    threading.Thread(
-        target=send_action_confirmation,
-        args=(current_user.email, vendor, action_label, current_user.full_name or current_user.email, decision.situation or ""),
-        daemon=True,
-    ).start()
-
-    # Send Slack notification immediately
-    from app.services.slack_service import send_slack_action_draft
-    slack_action_details = {
-        "contract_id": str(decision.contract_id),
-        "type": action_label,
-        "auto_sent": True,  # Indicates this was sent without human draft review
-    }
-    threading.Thread(
-        target=send_slack_action_draft,
-        args=(str(current_user.org_id), slack_action_details),
-        daemon=True
-    ).start()
+    # Fire webhook event
+    from app.api.webhooks import fire_event
+    fire_event(current_user.org_id, "decision.approved", {"decision_id": str(decision.id)}, db)
 
     return {
         "message": "Decision approved",
@@ -151,6 +134,9 @@ def reject_decision(
 
     _log_audit(db, current_user, "decision.rejected", "decision", decision.id)
     db.commit()
+
+    from app.api.webhooks import fire_event
+    fire_event(current_user.org_id, "decision.rejected", {"decision_id": str(decision.id)}, db)
 
     return {"message": "Decision rejected", "decision_id": decision_id}
 

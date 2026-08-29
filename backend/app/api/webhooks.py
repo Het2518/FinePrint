@@ -28,16 +28,7 @@ logger = logging.getLogger(__name__)
 # Model
 # ──────────────────────────────────────────────────────────────────────────────
 
-class Webhook(UUIDPrimaryKeyMixin, TimestampMixin, Base):
-    __tablename__ = "webhooks"
-
-    org_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False, index=True)
-    url: Mapped[str] = mapped_column(Text, nullable=False)
-    description: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    event_types: Mapped[str] = mapped_column(Text, nullable=False, default="decision.approved,decision.rejected")
-    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    last_fired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    last_status_code: Mapped[int | None] = mapped_column(nullable=True)
+from app.models.webhook import Webhook
 
 
 # ──────────────────────────────────────────────────────────────────────────────

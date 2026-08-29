@@ -80,6 +80,20 @@ def run_finance_agent(state: ContractScanState) -> ContractScanState:
                       "price_escalation_pct"]:
             finance_output[field] = float(finance_output.get(field, 0))
 
+        # Clamp against known value to prevent hallucinations
+        known_value = clauses.get("contract_value_annual")
+        if known_value is not None:
+            try:
+                known_value_float = float(known_value)
+                max_value = known_value_float * 3
+                for field in ["annual_cost_current", "annual_cost_if_renewed", 
+                              "estimated_savings_if_cancelled", "estimated_savings_if_renegotiated"]:
+                    if finance_output[field] > max_value:
+                        logger.warning(f"[Finance Agent] Clamping {field} from {finance_output[field]} to {known_value_float} (max allowed {max_value})")
+                        finance_output[field] = known_value_float
+            except (ValueError, TypeError):
+                pass
+
         logger.info(
             f"[Finance Agent] LLM estimate — "
             f"Current=${finance_output.get('annual_cost_current', 0):.2f} | "

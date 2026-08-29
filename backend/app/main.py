@@ -36,9 +36,6 @@ async def lifespan(app: FastAPI):
     scheduler = get_scheduler()
     
     # Add jobs if they don't already exist in Redis
-    from app.ingestion.scheduler import run_ingestion_job
-    scheduler.add_job(run_ingestion_job, "interval", minutes=1, id="ingestion_job", replace_existing=True)
-    
     from app.jobs.retention import run_retention_cleanup
     scheduler.add_job(run_retention_cleanup, "interval", hours=24, id="retention_job", replace_existing=True)
     

@@ -1,7 +1,7 @@
 """
 FinePrint — Agent Orchestration Service
 A standalone FastAPI microservice that hosts the LangGraph pipeline
-and MCP integrations. The API Gateway forwards contract scan requests here.
+and MCP integrations.
 
 Run: uvicorn services.agent_service.main:app --port 8001
 """

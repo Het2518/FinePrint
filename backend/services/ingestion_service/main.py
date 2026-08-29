@@ -60,8 +60,8 @@ async def parse_document(file: UploadFile = File(...)):
     import sys, os
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-    from app.ingestion.document_parser import parse_document as _parse
-    from app.ingestion.deduplication import compute_document_hash
+    from app.ingestion.document_parser import extract_text_from_bytes as _parse
+    from app.ingestion.deduplication import compute_hash as compute_document_hash
 
     contents = await file.read()
 
