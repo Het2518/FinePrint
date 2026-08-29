@@ -18,7 +18,7 @@ import {
   CheckCircle2, Clock, Building2, Zap, Users,
 } from "lucide-react";
 
-type Tab = "overview" | "pipeline" | "analysis" | "audit";
+type Tab = "overview" | "pipeline" | "analysis" | "document" | "audit";
 
 export default function ContractDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -140,6 +140,7 @@ export default function ContractDetailPage() {
     { key: "overview",  label: "Overview" },
     { key: "pipeline",  label: "Intelligence Pipeline", count: agentRuns.length },
     { key: "analysis",  label: "AI Analysis & Decision" },
+    { key: "document",  label: "Document & Clauses" },
     { key: "audit",     label: "Audit History", count: auditEvents.length },
   ];
 
@@ -705,6 +706,176 @@ export default function ContractDetailPage() {
                   </div>
                 </div>
               </>
+            )}
+          </div>
+        )}
+
+        {/* DOCUMENT & CLAUSES TAB */}
+        {activeTab === "document" && (
+          <div className="space-y-5 max-w-4xl">
+            {/* Clause Risk Highlights */}
+            {clause && (
+              <div
+                className="rounded-xl p-5"
+                style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <AlertTriangle size={13} style={{ color: "var(--status-warning)" }} />
+                  <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--text-secondary)" }}>
+                    Extracted Risk Clauses
+                  </h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {[
+                    {
+                      label: "Auto-Renew",
+                      value: clause.auto_renew === true ? "⚠ Yes — renews automatically" : clause.auto_renew === false ? "✓ No" : "Not found",
+                      risk: clause.auto_renew === true ? "high" : "low",
+                    },
+                    {
+                      label: "Notice Period",
+                      value: clause.notice_period_days ? `${clause.notice_period_days} days` : "Not found",
+                      risk: (clause.notice_period_days ?? 999) < 30 ? "high" : "low",
+                    },
+                    {
+                      label: "Price Escalation",
+                      value: clause.price_escalation_pct ? `${clause.price_escalation_pct}% per year` : "None found",
+                      risk: (clause.price_escalation_pct ?? 0) > 5 ? "high" : (clause.price_escalation_pct ?? 0) > 0 ? "medium" : "low",
+                    },
+                    {
+                      label: "Renewal Date",
+                      value: clause.renewal_date ? new Date(clause.renewal_date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "Not specified",
+                      risk: (() => {
+                        if (!clause.renewal_date) return "medium";
+                        const days = Math.ceil((new Date(clause.renewal_date).getTime() - Date.now()) / 86400000);
+                        return days < 60 ? "high" : days < 180 ? "medium" : "low";
+                      })(),
+                    },
+                    {
+                      label: "Contract Value (Annual)",
+                      value: clause.contract_value_annual ? `$${Number(clause.contract_value_annual).toLocaleString()} ${clause.currency ?? "USD"}` : "Not specified",
+                      risk: "low",
+                    },
+                    {
+                      label: "Ambiguous Clauses",
+                      value: clause.ambiguous_clauses?.length > 0 ? `${clause.ambiguous_clauses.length} flagged` : "None detected",
+                      risk: clause.ambiguous_clauses?.length > 0 ? "medium" : "low",
+                    },
+                  ].map(({ label, value, risk }) => (
+                    <div
+                      key={label}
+                      className="rounded-lg p-3.5"
+                      style={{
+                        background: risk === "high" ? "var(--status-danger-muted)" : risk === "medium" ? "var(--status-warning-muted)" : "var(--bg-surface-raised)",
+                        border: `1px solid ${
+                          risk === "high" ? "var(--status-danger-border)" : risk === "medium" ? "var(--status-warning-border)" : "var(--border-subtle)"
+                        }`,
+                      }}
+                    >
+                      <p
+                        className="text-[10px] font-semibold uppercase tracking-wider mb-1"
+                        style={{ color: risk === "high" ? "var(--status-danger)" : risk === "medium" ? "var(--status-warning)" : "var(--text-tertiary)" }}
+                      >
+                        {label}
+                      </p>
+                      <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                        {value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {clause.ambiguous_clauses?.length > 0 && (
+                  <div className="mt-4 p-3.5 rounded-lg" style={{ background: "var(--status-warning-muted)", border: "1px solid var(--status-warning-border)" }}>
+                    <p className="text-xs font-semibold mb-2" style={{ color: "var(--status-warning)" }}>⚠ Ambiguous Clause Details</p>
+                    <ul className="space-y-1">
+                      {clause.ambiguous_clauses.map((c: string, i: number) => (
+                        <li key={i} className="text-xs" style={{ color: "var(--status-warning)" }}>• {c}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Raw Text Viewer with keyword highlighting */}
+            {contract.raw_text && (
+              <div
+                className="rounded-xl p-5"
+                style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <FileText size={13} style={{ color: "var(--accent)" }} />
+                  <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--text-secondary)" }}>
+                    Raw Contract Text
+                  </h2>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full ml-auto" style={{ background: "var(--bg-surface-raised)", color: "var(--text-tertiary)", border: "1px solid var(--border-subtle)" }}>
+                    {contract.raw_text.length.toLocaleString()} chars
+                  </span>
+                </div>
+                <div
+                  className="text-xs leading-relaxed overflow-y-auto rounded-lg p-4 font-mono max-h-96 whitespace-pre-wrap"
+                  style={{
+                    background: "var(--bg-canvas)",
+                    border: "1px solid var(--border-subtle)",
+                    color: "var(--text-secondary)",
+                  }}
+                  dangerouslySetInnerHTML={{
+                    __html: contract.raw_text
+                      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                      .replace(
+                        /(auto.?renew|automatic renewal|automatically renew)/gi,
+                        '<mark style="background:rgba(248,81,73,0.2);color:var(--status-danger);border-radius:3px;padding:0 2px">$1</mark>'
+                      )
+                      .replace(
+                        /(price escalation|rate increase|annual increase|\d+\.?\d*%\s*(per|a)\s*year)/gi,
+                        '<mark style="background:rgba(210,153,34,0.2);color:var(--status-warning);border-radius:3px;padding:0 2px">$1</mark>'
+                      )
+                      .replace(
+                        /(notice period|written notice|days.{0,20}notice|notice.{0,20}days)/gi,
+                        '<mark style="background:rgba(63,185,80,0.15);color:var(--status-success);border-radius:3px;padding:0 2px">$1</mark>'
+                      )
+                  }}
+                />
+                <div className="flex gap-4 mt-3">
+                  {[
+                    { color: "var(--status-danger)", bg: "rgba(248,81,73,0.15)", label: "Auto-Renew" },
+                    { color: "var(--status-warning)", bg: "rgba(210,153,34,0.15)", label: "Price Escalation" },
+                    { color: "var(--status-success)", bg: "rgba(63,185,80,0.12)", label: "Notice Period" },
+                  ].map(({ color, bg, label }) => (
+                    <span key={label} className="flex items-center gap-1.5 text-[10px]" style={{ color: "var(--text-tertiary)" }}>
+                      <span className="w-3 h-3 rounded-sm inline-block" style={{ background: bg, border: `1px solid ${color}` }} />
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* PDF Viewer */}
+            {contract.file_name?.toLowerCase().endsWith(".pdf") && (
+              <div
+                className="rounded-xl p-5"
+                style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}
+              >
+                <h2 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "var(--text-secondary)" }}>
+                  PDF Document
+                </h2>
+                <div
+                  className="rounded-lg flex items-center justify-center py-12 text-center"
+                  style={{ background: "var(--bg-canvas)", border: "1px dashed var(--border-default)" }}
+                >
+                  <div>
+                    <FileText size={32} className="mx-auto mb-3" style={{ color: "var(--text-disabled)" }} />
+                    <p className="text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>
+                      {contract.file_name}
+                    </p>
+                    <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+                      PDF viewer requires the file to be served from storage. The extracted text is shown above.
+                    </p>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         )}

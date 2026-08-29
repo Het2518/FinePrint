@@ -100,9 +100,25 @@ export const api = {
   updateOrgSettings: (data: any) =>
     apiFetch<any>("/settings", { method: "PUT", body: JSON.stringify(data) }),
 
-  // Audit Log (NEW)
+  // Audit Log
   listAuditLogs: (params?: { contract_id?: string; limit?: number }) => {
     const qs = new URLSearchParams(params as any).toString();
     return apiFetch<any>(`/audit${qs ? `?${qs}` : ""}`);
   },
+
+  // Chat (AI Q&A)
+  chat: (data: { message: string; contract_id?: string }) =>
+    apiFetch<{ reply: string; context_used: string[] }>("/chat", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  // Analytics
+  getOutcomeAnalytics: () => apiFetch<any>("/analytics/outcomes"),
+  getRiskTrend: (days?: number) =>
+    apiFetch<any>(`/analytics/risk-trend${days ? `?days=${days}` : ""}`),
+  getAnalyticsSummary: () => apiFetch<any>("/analytics/summary"),
+
+  // Notifications
+  listNotifications: () => apiFetch<any>("/notifications"),
 };
