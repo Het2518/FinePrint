@@ -26,7 +26,7 @@ def apply_approval_rules(state: ContractScanState) -> ContractScanState:
     risk_level = decision.get("risk", "low")
 
     from app.core.database import SessionLocal
-    from app.models.org_settings import OrgSettings
+    from app.core.org_settings import OrgSettings
     from app.core.config import settings
 
     db = SessionLocal()

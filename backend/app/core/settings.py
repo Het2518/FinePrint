@@ -11,7 +11,7 @@ from typing import Optional
 from app.core.database import get_db
 from app.core.rbac import require_admin
 from app.users.user import User
-from app.models.org_settings import OrgSettings
+from app.core.org_settings import OrgSettings
 
 router = APIRouter()
 

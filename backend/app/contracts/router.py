@@ -18,7 +18,7 @@ from app.core.rbac import require_user_or_admin
 from app.users.user import User
 from app.contracts.contract import Contract, ContractSource, ContractStatus
 from app.contracts.contract_clause import ContractClause
-from app.models.agent_run import AgentRun
+from app.intelligence.agent_run import AgentRun
 from app.decisions.decision import Decision
 from app.common.document_parser import extract_text_from_bytes, ParseFailure
 from app.common.deduplication import compute_hash, check_duplicate
@@ -288,7 +288,7 @@ def _persist_pipeline_results(contract: Contract, result: dict, db: Session, use
     from datetime import timezone
     from app.contracts.contract_clause import ContractClause
     from app.decisions.decision import Decision, RiskLevel, RecommendedAction, ApprovalStatus
-    from app.models.agent_run import AgentRun, AgentRunStatus
+    from app.intelligence.agent_run import AgentRun, AgentRunStatus
     from app.integrations.email_service import send_high_risk_alert, send_approval_request
 
     clauses_data = result.get("clauses")

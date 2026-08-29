@@ -71,22 +71,35 @@ def health_check():
     return {"status": "ok", "service": "FinePrint API"}
 
 
-from app.api import auth, contracts, decisions, actions, dashboard, mcp, settings as org_settings, audit, chat, analytics, notifications, renewals, export, vendors, team, webhooks
+from app.users.auth_router import router as auth_router
+from app.contracts.router import router as contracts_router
+from app.decisions.router import router as decisions_router
+from app.actions.router import router as actions_router
+from app.reports.dashboard import router as dashboard_router
+from app.mcp_integration.router import router as mcp_router
+from app.core.settings import router as settings_router
+from app.reports.audit import router as audit_router
+from app.reports.analytics import router as analytics_router
+from app.integrations.notifications import router as notifications_router
+from app.reports.renewals import router as renewals_router
+from app.reports.export import router as export_router
+from app.reports.vendors import router as vendors_router
+from app.users.team_router import router as team_router
+from app.integrations.webhooks_router import router as webhooks_router
 
-app.include_router(auth.router, prefix="/auth", tags=["Auth"])
-app.include_router(contracts.router, prefix="/contracts", tags=["Contracts"])
-app.include_router(decisions.router, prefix="/decisions", tags=["Decisions"])
-app.include_router(actions.router, prefix="/actions", tags=["Actions"])
-app.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"])
-app.include_router(mcp.router, prefix="/mcp", tags=["MCP"])
-app.include_router(org_settings.router, prefix="/settings", tags=["Settings"])
-app.include_router(audit.router, prefix="/audit", tags=["Audit"])
-app.include_router(chat.router, prefix="/chat", tags=["Chat"])
-app.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
-app.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])
-app.include_router(renewals.router, prefix="/renewals", tags=["Renewals"])
-app.include_router(export.router, prefix="/export", tags=["Export"])
-app.include_router(vendors.router, prefix="/vendors", tags=["Vendors"])
-app.include_router(team.router, prefix="/team", tags=["Team"])
-app.include_router(webhooks.router, prefix="/webhooks", tags=["Webhooks"])
+app.include_router(auth_router, prefix="/auth", tags=["Auth"])
+app.include_router(contracts_router, prefix="/contracts", tags=["Contracts"])
+app.include_router(decisions_router, prefix="/decisions", tags=["Decisions"])
+app.include_router(actions_router, prefix="/actions", tags=["Actions"])
+app.include_router(dashboard_router, prefix="/dashboard", tags=["Dashboard"])
+app.include_router(mcp_router, prefix="/mcp", tags=["MCP"])
+app.include_router(settings_router, prefix="/settings", tags=["Settings"])
+app.include_router(audit_router, prefix="/audit", tags=["Audit"])
+app.include_router(analytics_router, prefix="/analytics", tags=["Analytics"])
+app.include_router(notifications_router, prefix="/notifications", tags=["Notifications"])
+app.include_router(renewals_router, prefix="/renewals", tags=["Renewals"])
+app.include_router(export_router, prefix="/export", tags=["Export"])
+app.include_router(vendors_router, prefix="/vendors", tags=["Vendors"])
+app.include_router(team_router, prefix="/team", tags=["Team"])
+app.include_router(webhooks_router, prefix="/webhooks", tags=["Webhooks"])
 

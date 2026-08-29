@@ -11,6 +11,7 @@ from sqlalchemy.dialects.postgresql import UUID
 
 from app.core.database import Base
 from app.core.mixins import UUIDPrimaryKeyMixin, TimestampMixin
+from app.users.organization import Organization
 
 
 class UserRole(str, enum.Enum):

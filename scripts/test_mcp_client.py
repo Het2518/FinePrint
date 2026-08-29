@@ -5,7 +5,7 @@ from mcp.client.stdio import stdio_client
 async def run():
     server_params = StdioServerParameters(
         command="python",
-        args=["sqlite_mcp.py"],
+        args=["mcp_servers/sqlite_server.py"],
         env=None
     )
 

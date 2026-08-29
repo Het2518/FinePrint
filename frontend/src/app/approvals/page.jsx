@@ -9,8 +9,8 @@ import PolicyRuleRow from "@/app/contracts/components/PolicyRuleRow";
 import CurrencyValue from "@/components/ui/CurrencyValue";
 import EmptyState from "@/components/ui/EmptyState";
 import Link from "next/link";
-import {
 import Button from "@/components/ui/Button";
+import {
   Bell, CheckCircle2, XCircle, FileText, Users,
   AlertTriangle, Cpu, Zap, Clock,
 } from "lucide-react";
@@ -108,10 +108,10 @@ export default function ApprovalsPage() {
             decisions.map((d) => {
               const isSelected = selected?.id === d.id;
               return (
-                <Button
+                <button
                   key={d.id}
                   onClick={() => setSelected(d)}
-                  className="w-full text-left px-4 py-3.5 relative transition-colors"
+                  className="w-full block text-left px-4 py-3.5 relative transition-colors"
                   style={{
                     background: isSelected ? "var(--bg-hover)" : "transparent",
                     borderBottom: "1px solid var(--border-subtle)",
@@ -165,7 +165,7 @@ export default function ApprovalsPage() {
                       <Users size={10} /> 2nd Approver Required
                     </div>
                   )}
-                </Button>
+                </button>
               );
             })
           )}
