@@ -112,12 +112,11 @@ export default function ContractsPage() {
     let stage = 0;
     const stageTimer = setInterval(() => {
       stage += 1;
+      setLiveStage(stage);
       if (stage >= TOTAL) {
         clearInterval(stageTimer);
         animDone = true;
         if (backendDone) finishMonitor();
-      } else {
-        setLiveStage(stage);
       }
     }, STAGE_MS);
 

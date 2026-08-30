@@ -1,88 +1,103 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 
 // ── Agent definitions ──────────────────────────────────────────────────────────
-const AGENTS = [
-  {
-    key: "ingestion", label: "Contract Parser", color: "#818cf8",
-    emoji: "📄",
-    logs: [
-      "Opening document stream…",
-      "Extracting raw text via parser…",
-      "Tokenising into segments…",
-      "Splitting clause boundaries…",
-      "✓ Document parsed successfully",
-    ],
-  },
-  {
-    key: "detection", label: "Clause Detection", color: "#a78bfa",
-    emoji: "🔍",
-    logs: [
-      "Sending to Groq llama3-8b-8192…",
-      "Extracting vendor name…",
-      "Parsing renewal date & notice period…",
-      "Detecting auto-renew clauses…",
-      "Scoring extraction confidence: 0.91",
-      "✓ Clause extraction complete",
-    ],
-  },
-  {
-    key: "usage", label: "Usage Signals", color: "#34d399",
-    emoji: "📊",
-    logs: [
-      "Querying Okta MCP server…",
-      "Fetching active seat count…",
-      "Calculating utilisation ratio…",
-      "Estimating idle seat cost…",
-      "✓ Usage signals retrieved",
-    ],
-  },
-  {
-    key: "risk", label: "Risk Analysis", color: "#fb923c",
-    emoji: "⚠️",
-    logs: [
-      "Evaluating auto-renew exposure…",
-      "Checking notice period adequacy…",
-      "Scanning for price escalation clauses…",
-      "Assessing ambiguous clause risk…",
-      "✓ Risk level determined",
-    ],
-  },
-  {
-    key: "finance", label: "Finance Model", color: "#fbbf24",
-    emoji: "💰",
-    logs: [
-      "Loading annual contract value…",
-      "Projecting renewal cost trajectory…",
-      "Estimating renegotiation savings…",
-      "Calculating cancellation impact…",
-      "✓ Financial model complete",
-    ],
-  },
-  {
-    key: "decision", label: "Decision Agent", color: "#f472b6",
-    emoji: "🤖",
-    logs: [
-      "Querying ChromaDB for similar decisions…",
-      "Running LLM decision synthesis…",
-      "Generating recommended action…",
-      "Computing confidence score…",
-      "✓ Decision generated",
-    ],
-  },
-  {
-    key: "rules", label: "Policy Rules", color: "#60a5fa",
-    emoji: "📋",
-    logs: [
-      "Applying $5 000 approval threshold…",
-      "Checking risk escalation policies…",
-      "Evaluating auto-approve conditions…",
-      "Routing decision outcome…",
-      "✓ Policy evaluation complete",
-    ],
-  },
-];
+function getAgents(fileName = "") {
+  const name = fileName || "document";
+  const ext = name.includes(".") ? name.split('.').pop().toUpperCase() : "DOC";
+  
+  let seed = 0;
+  for (let i = 0; i < name.length; i++) {
+    seed += name.charCodeAt(i);
+  }
+  
+  const tokens = (1200 + (seed % 6000)).toLocaleString();
+  const segments = 12 + (seed % 35);
+  const confidence = (0.85 + ((seed % 14) / 100)).toFixed(2);
+  const seats = 10 + (seed % 150);
+  
+  return [
+    {
+      key: "ingestion", label: "Contract Parser", color: "#818cf8",
+      emoji: "📄",
+      logs: [
+        `Opening ${ext} document stream for ${name}…`,
+        "Extracting raw text via parser…",
+        `Tokenising into ${segments} segments…`,
+        "Splitting clause boundaries…",
+        "✓ Document parsed successfully",
+      ],
+    },
+    {
+      key: "detection", label: "Clause Detection", color: "#a78bfa",
+      emoji: "🔍",
+      logs: [
+        `Sending ${tokens} context tokens to Groq…`,
+        "Extracting vendor name…",
+        "Parsing renewal date & notice period…",
+        "Detecting auto-renew clauses…",
+        `Scoring extraction confidence: ${confidence}`,
+        "✓ Clause extraction complete",
+      ],
+    },
+    {
+      key: "usage", label: "Usage Signals", color: "#34d399",
+      emoji: "📊",
+      logs: [
+        "Querying Okta MCP server…",
+        `Fetching active seat count (found ${seats})…`,
+        "Calculating utilisation ratio…",
+        "Estimating idle seat cost…",
+        "✓ Usage signals retrieved",
+      ],
+    },
+    {
+      key: "risk", label: "Risk Analysis", color: "#fb923c",
+      emoji: "⚠️",
+      logs: [
+        "Evaluating auto-renew exposure…",
+        "Checking notice period adequacy…",
+        "Scanning for price escalation clauses…",
+        "Assessing ambiguous clause risk…",
+        "✓ Risk level determined",
+      ],
+    },
+    {
+      key: "finance", label: "Finance Model", color: "#fbbf24",
+      emoji: "💰",
+      logs: [
+        "Loading annual contract value…",
+        "Projecting renewal cost trajectory…",
+        "Estimating renegotiation savings…",
+        "Calculating cancellation impact…",
+        "✓ Financial model complete",
+      ],
+    },
+    {
+      key: "decision", label: "Decision Agent", color: "#f472b6",
+      emoji: "🤖",
+      logs: [
+        "Querying ChromaDB for similar decisions…",
+        "Running LLM decision synthesis…",
+        "Generating recommended action…",
+        "Computing confidence score…",
+        "✓ Decision generated",
+      ],
+    },
+    {
+      key: "rules", label: "Policy Rules", color: "#60a5fa",
+      emoji: "📋",
+      logs: [
+        "Applying org approval threshold…",
+        "Checking risk escalation policies…",
+        "Evaluating auto-approve conditions…",
+        "Routing decision outcome…",
+        "✓ Policy evaluation complete",
+      ],
+    },
+  ];
+}
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 function AgentNode({ agent, isDone, isActive }) {
@@ -169,8 +184,9 @@ const LIVE_SCAN_STYLES = `
 
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function LiveScanMonitor({ fileName, visible, externalStage, onClose }) {
-  const [logLines, setLogLines] = useState([AGENTS[0].logs[0]]);
-  const [logAgentColor, setLogAgentColor] = useState(AGENTS[0].color);
+  const agents = useMemo(() => getAgents(fileName), [fileName]);
+  const [logLines, setLogLines] = useState([agents[0].logs[0]]);
+  const [logAgentColor, setLogAgentColor] = useState(agents[0].color);
   const [elapsed, setElapsed]   = useState(0);
   const [done, setDone]         = useState(false);
 
@@ -183,14 +199,21 @@ export default function LiveScanMonitor({ fileName, visible, externalStage, onCl
 
   // Reset when opened
   useEffect(() => {
+    if (!document.getElementById("live-scan-styles")) {
+      const style = document.createElement("style");
+      style.id = "live-scan-styles";
+      style.innerHTML = LIVE_SCAN_STYLES;
+      document.head.appendChild(style);
+    }
+
     if (!visible) return;
     startRef.current = Date.now();
-    setLogLines([AGENTS[0].logs[0]]);
-    setLogAgentColor(AGENTS[0].color);
+    setLogLines([agents[0].logs[0]]);
+    setLogAgentColor(agents[0].color);
     setElapsed(0);
     setDone(false);
     prevStageRef.current = -1;
-  }, [visible]);
+  }, [visible, agents]);
 
   // Elapsed timer
   useEffect(() => {
@@ -205,10 +228,10 @@ export default function LiveScanMonitor({ fileName, visible, externalStage, onCl
     if (stage === prevStageRef.current) return;
     prevStageRef.current = stage;
 
-    const agent = AGENTS[Math.min(stage, AGENTS.length - 1)];
+    const agent = agents[Math.min(stage, agents.length - 1)];
     setLogAgentColor(agent.color);
 
-    if (stage >= AGENTS.length) {
+    if (stage >= agents.length) {
       setDone(true);
       setLogLines(prev => [...prev, "", "── All agents complete ──", "✓ Results saved to database"]);
       return;
@@ -228,7 +251,7 @@ export default function LiveScanMonitor({ fileName, visible, externalStage, onCl
         setLogLines(prev => [...prev, line]);
       }, (i + 1) * 900 + Math.random() * 400);
     });
-  }, [stage, visible]);
+  }, [stage, visible, agents]);
 
   // Auto-scroll log
   useEffect(() => {
@@ -237,8 +260,8 @@ export default function LiveScanMonitor({ fileName, visible, externalStage, onCl
 
   if (!visible) return null;
 
-  const curAgent = AGENTS[Math.min(stage, AGENTS.length - 1)];
-  const progressPct = Math.min((stage / (AGENTS.length - 1)) * 100, 100);
+  const curAgent = agents[Math.min(stage, agents.length - 1)];
+  const progressPct = Math.min((stage / (agents.length - 1)) * 100, 100);
 
   return (
     <div style={{
@@ -249,7 +272,6 @@ export default function LiveScanMonitor({ fileName, visible, externalStage, onCl
       alignItems: "center", justifyContent: "center",
       padding: 16,
     }}>
-      <style dangerouslySetInnerHTML={{ __html: LIVE_SCAN_STYLES }} />
 
       <div style={{
         width: "100%", maxWidth: 880,
@@ -324,13 +346,13 @@ export default function LiveScanMonitor({ fileName, visible, externalStage, onCl
         {/* ── Pipeline Nodes ── */}
         <div style={{ padding: "28px 28px 12px", overflowX: "auto" }}>
           <div style={{ display: "flex", alignItems: "flex-start", minWidth: 640 }}>
-            {AGENTS.map((agent, i) => (
-              <div key={agent.key} style={{ display: "flex", alignItems: "center", flex: i < AGENTS.length - 1 ? 1 : "0 0 auto" }}>
+            {agents.map((agent, i) => (
+              <div key={agent.key} style={{ display: "flex", alignItems: "center", flex: i < agents.length - 1 ? 1 : "0 0 auto" }}>
                 <AgentNode agent={agent} isDone={i < stage} isActive={i === stage && !done} />
-                {i < AGENTS.length - 1 && (
+                {i < agents.length - 1 && (
                   <Connector
-                    fromColor={AGENTS[i].color}
-                    toColor={AGENTS[i + 1].color}
+                    fromColor={agents[i].color}
+                    toColor={agents[i + 1].color}
                     isDone={i < stage}
                     isActive={i === stage && !done}
                   />
@@ -347,7 +369,7 @@ export default function LiveScanMonitor({ fileName, visible, externalStage, onCl
               {done ? "✓ Pipeline complete — loading results…" : `${curAgent.emoji} ${curAgent.label}`}
             </span>
             <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", fontFamily: "monospace" }}>
-              {Math.min(stage + 1, AGENTS.length)} / {AGENTS.length} agents
+              {Math.min(stage + 1, agents.length)} / {agents.length} agents
             </span>
           </div>
 
@@ -417,7 +439,7 @@ export default function LiveScanMonitor({ fileName, visible, externalStage, onCl
         }}>
           <div style={{ display: "flex", gap: 28 }}>
             {[
-              { label: "Agents Run",  value: `${Math.min(stage + 1, AGENTS.length)}/${AGENTS.length}` },
+              { label: "Agents Run",  value: `${Math.min(stage + 1, agents.length)}/${agents.length}` },
               { label: "LLM Calls",   value: Math.min(stage, 4) },
               { label: "MCP Calls",   value: Math.max(0, Math.min(stage - 1, 2)) },
             ].map(({ label, value }) => (

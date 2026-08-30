@@ -49,7 +49,7 @@ class Decision(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     expected_impact_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)  # {"savings_annual": 21000}
     risk_level: Mapped[RiskLevel | None] = mapped_column(SAEnum(RiskLevel), nullable=True)
     confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
-
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(1536), nullable=True)
 
     # Deterministic rule layer output (pure Python, never LLM — FR-DEC-2)
     requires_approval: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

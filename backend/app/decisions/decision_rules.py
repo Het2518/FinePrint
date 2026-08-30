@@ -8,6 +8,8 @@ Lives entirely outside the agent reasoning path to prevent any LLM influence on 
 import logging
 from app.intelligence.state import ContractScanState
 from app.core.config import settings
+from app.core.database import SessionLocal
+from app.core.org_settings import OrgSettings
 
 logger = logging.getLogger(__name__)
 
@@ -24,10 +26,6 @@ def apply_approval_rules(state: ContractScanState) -> ContractScanState:
     expected_impact = decision.get("expected_impact", {})
     savings_annual = float(expected_impact.get("savings_annual", 0))
     risk_level = decision.get("risk", "low")
-
-    from app.core.database import SessionLocal
-    from app.core.org_settings import OrgSettings
-    from app.core.config import settings
 
     db = SessionLocal()
     try:

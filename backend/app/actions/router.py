@@ -113,7 +113,8 @@ def send_action(
 
 def _execute_via_mcp(action: Action, user: User, db: Session) -> str:
     """Calls the appropriate MCP tool for the action type. Returns the server name used."""
-    from app.mcp import slack_tools
+    from app.mcp_integration import slack_tools
+
     payload = action.payload_json or {}
 
     # For email drafts, we use Slack DM in MVP (email MCP can be wired in Phase 7)
